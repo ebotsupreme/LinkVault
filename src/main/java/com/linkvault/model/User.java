@@ -22,6 +22,11 @@ public class User {
     private String username;
     private String password; // TODO Hash
 
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Link> links = new ArrayList<>();
 }
