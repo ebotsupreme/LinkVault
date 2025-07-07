@@ -25,6 +25,13 @@ public class Link {
     private String description;
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    public Link(String url, String title, String description, User user) {
+        this.url = url;
+        this.title = title;
+        this.description = description;
+        this.user = user;
+    }
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
