@@ -1,6 +1,7 @@
 package com.linkvault.service;
 
 import com.linkvault.dto.LinkDto;
+import com.linkvault.mapper.LinkMapper;
 import com.linkvault.model.Link;
 import com.linkvault.repository.LinkRepository;
 import org.springframework.stereotype.Service;
@@ -20,8 +21,6 @@ public class LinkServiceImpl implements LinkService{
         List<Link> links = linkRepository.findByUserId(userId);
 
         return links.stream()
-            .map(link -> new LinkDto(
-                link.getId(), link.getUrl(), link.getTitle(), link.getDescription())
-            ).collect(Collectors.toList());
+            .map(LinkMapper::toDto).toList();
     }
 }

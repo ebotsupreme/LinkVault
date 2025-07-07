@@ -1,25 +1,28 @@
 package com.linkvault.controller;
 
+import com.linkvault.dto.LinkDto;
 import com.linkvault.model.Link;
 import com.linkvault.repository.LinkRepository;
+import com.linkvault.service.LinkServiceImpl;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/links")
+@RequestMapping("/api/links")
 public class LinkController {
-    private final LinkRepository linkRepository;
+    private final LinkServiceImpl linkServiceImpl;
 
-    public LinkController(LinkRepository linkRepository) {
-        this.linkRepository = linkRepository;
+    public LinkController(LinkServiceImpl linkServiceImpl) {
+        this.linkServiceImpl = linkServiceImpl;
     }
 
     // Get /links
-    @GetMapping
-    public List<Link> getAllLinks(){
-        return linkRepository.findAll();
+    @GetMapping("/user/{userId}")
+    public List<LinkDto> getAllLinksForUser(@PathVariable Long userId) {
+        return linkServiceImpl.getAllLinksForUser(userId);
     }
 }
