@@ -7,7 +7,7 @@ import com.linkvault.repository.LinkRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class LinkServiceImpl implements LinkService{
@@ -22,5 +22,9 @@ public class LinkServiceImpl implements LinkService{
 
         return links.stream()
             .map(LinkMapper::toDto).toList();
+    }
+
+    public Optional<LinkDto> getLinkById(Long linkId) {
+       return linkRepository.findById(linkId).map(LinkMapper::toDto);
     }
 }
