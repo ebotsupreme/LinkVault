@@ -33,7 +33,7 @@ public class LinkServiceTest {
     }
 
     @Test
-    void getAllLinks_ShouldReturnListOfLinkDtos_WhenUserHasLinks() {
+    void shouldReturnListOfLinkDtosWhenUserHasLinks() {
         // Arrange
         Link link1 = new Link("https://github.com", "Git Hub", "Repositories", user);
         Link link2 = new Link("https://spring.io", "Spring Boot", "Learning Spring Boot", user);
@@ -49,7 +49,7 @@ public class LinkServiceTest {
     }
 
     @Test
-    void getLinkById_ShouldReturnLinkDto_WhenIdExists() {
+    void shouldReturnLinkDtoWhenIdExists() {
         // Arrange
         Link link = new Link("https://github.com", "Git Hub", "Repositories", user);
         link.setId(1L);
@@ -64,7 +64,7 @@ public class LinkServiceTest {
     }
 
     @Test
-    void getLinkById_ShouldFail_WhenNoIdExists() {
+    void shouldThrowExceptionWhenLinkDoesNotExist() {
         // Arrange
         when(linkRepository.findById(2L)).thenReturn(Optional.empty());
 
@@ -75,5 +75,8 @@ public class LinkServiceTest {
         assertTrue(result.isEmpty());
     }
 
+    @Test
+    void shouldCreateLinkForGivenUser() {
 
+    }
 }

@@ -37,7 +37,7 @@ public class LinkControllerTest {
     }
 
     @Test
-    void getAllLinksForUser_ShouldReturnAllLinksForUser_WhenUserHasLinks() throws Exception {
+    void shouldReturnAllLinksForUserWhenUserHasLinks() throws Exception {
         // Arrange
         LinkDto linkDto1 = new LinkDto(TEST_ID1, "https://github.com", "Git Hub", "Repositories");
         LinkDto linkDto2 = new LinkDto(2L, "https://spring.io", "Spring Boot", "Learning Spring Boot");
@@ -51,7 +51,7 @@ public class LinkControllerTest {
     }
 
     @Test
-    void getLinkById_ShouldReturnLink_WhenIdExists() throws Exception {
+    void shouldReturnLinkWhenIdExists() throws Exception {
         // Arrange
         LinkDto linkDto = new LinkDto(TEST_ID1, "https://github.com", "Git Hub", "Repositories");
         when(linkService.getLinkById(linkDto.id())).thenReturn(Optional.of(linkDto));
@@ -63,7 +63,7 @@ public class LinkControllerTest {
     }
 
     @Test
-    void getLinkById_ShouldReturnNotFoundStatus_WhenLinkDoesNotExist() throws Exception {
+    void shouldReturnNotFoundStatusWhenLinkDoesNotExist() throws Exception {
         // Arrange
         when(linkService.getLinkById(TEST_ID1)).thenReturn(Optional.empty());
 
