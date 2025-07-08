@@ -4,6 +4,7 @@ import com.linkvault.dto.LinkDto;
 import com.linkvault.model.Link;
 import com.linkvault.model.User;
 import com.linkvault.repository.LinkRepository;
+import com.linkvault.repository.UserRepository;
 import com.linkvault.service.LinkService;
 import com.linkvault.service.LinkServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,27 +17,35 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class LinkServiceTest {
     @Mock
     private LinkRepository linkRepository;
+    @Mock
+    private UserRepository userRepository;
     private LinkService linkService;
     private User user;
+    private final Long TEST_ID1= 1L;
+    private final Long TEST_ID2 = 2L;
+    private final Long TEST_ID3 = 42L;
 
     @BeforeEach
     void setUp() {
-        linkService = new LinkServiceImpl(linkRepository);
+        linkService = new LinkServiceImpl(linkRepository, userRepository);
         user = new User("eddie", "password123");
-        user.setId(1L);
+        user.setId(TEST_ID1);
     }
 
     @Test
     void shouldReturnListOfLinkDtosWhenUserHasLinks() {
         // Arrange
-        Link link1 = new Link("https://github.com", "Git Hub", "Repositories", user);
-        Link link2 = new Link("https://spring.io", "Spring Boot", "Learning Spring Boot", user);
+        Link link1 = new Link("https://github.com", "Git Hub",
+            "Repositories", user);
+        Link link2 = new Link("https://spring.io", "Spring Boot",
+            "Learning Spring Boot", user);
         when(linkRepository.findByUserId(user.getId())).thenReturn(List.of(link1, link2));
 
         // Act
@@ -51,8 +60,9 @@ public class LinkServiceTest {
     @Test
     void shouldReturnLinkDtoWhenIdExists() {
         // Arrange
-        Link link = new Link("https://github.com", "Git Hub", "Repositories", user);
-        link.setId(1L);
+        Link link = new Link("https://github.com", "Git Hub",
+            "Repositories", user);
+        link.setId(TEST_ID1);
         when(linkRepository.findById(link.getId())).thenReturn(Optional.of(link));
 
         // Act
@@ -66,10 +76,10 @@ public class LinkServiceTest {
     @Test
     void shouldThrowExceptionWhenLinkDoesNotExist() {
         // Arrange
-        when(linkRepository.findById(2L)).thenReturn(Optional.empty());
+        when(linkRepository.findById(TEST_ID2)).thenReturn(Optional.empty());
 
         // Act
-        Optional<LinkDto> result = linkService.getLinkById(2L);
+        Optional<LinkDto> result = linkService.getLinkById(TEST_ID2);
 
         // Assert
         assertTrue(result.isEmpty());
@@ -77,6 +87,47 @@ public class LinkServiceTest {
 
     @Test
     void shouldCreateLinkForGivenUser() {
+        // Arrange
+        LinkDto linkDto = new LinkDto(TEST_ID3,"https://github.com",
+            "Git Hub", "Repositories");
+        Link savedLink = new Link("https://github.com",
+            "Git Hub", "Repositories", user);
+        savedLink.setId(TEST_ID1);
+        when(userRepository.findById(TEST_ID1)).thenReturn(Optional.of(user));
+        when(linkRepository.save(any(Link.class))).thenReturn(savedLink);
 
+        // Act
+        Optional<LinkDto> result = linkService.createLink(user.getId(), linkDto);
+
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals("Git Hub", result.get().title());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUserNotFound() {
+        // Arrange
+        LinkDto linkDto = new LinkDto(TEST_ID1,"https://github.com",
+            "Git Hub", "Repositories");
+        when(userRepository.findById(TEST_ID3)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> {
+            linkService.createLink(TEST_ID3, linkDto);
+        });
+    }
+
+    @Test
+    void shouldThrowExceptionWhenLinkSaveFails(){
+        // Arrange
+        LinkDto linkDto = new LinkDto(TEST_ID2,"https://github.com",
+            "Git Hub", "Repositories");
+        when(userRepository.findById(TEST_ID1)).thenReturn(Optional.of(user));
+        when(linkRepository.save(any(Link.class))).thenThrow(new RuntimeException("Database failure"));
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> {
+            linkService.createLink(TEST_ID1, linkDto);
+        });
     }
 }
