@@ -28,6 +28,9 @@ public class LinkServiceTest {
     private UserRepository userRepository;
     private LinkService linkService;
     private User user;
+    private Link link1;
+    private Link link2;
+    private LinkDto linkDto;
     private final Long TEST_ID1= 1L;
     private final Long TEST_ID2 = 2L;
     private final Long TEST_ID3 = 42L;
@@ -37,15 +40,20 @@ public class LinkServiceTest {
         linkService = new LinkServiceImpl(linkRepository, userRepository);
         user = new User("eddie", "password123");
         user.setId(TEST_ID1);
+
+        link1 = new Link("https://github.com", "Git Hub",
+            "Repositories", user);
+        link1.setId(TEST_ID1);
+        link2 = new Link("https://spring.io", "Spring Boot",
+            "Learning Spring Boot", user);
+        link2.setId(TEST_ID2);
+        linkDto = new LinkDto(TEST_ID1,"https://github.com",
+            "Git Hub", "Repositories", user.getId());
     }
 
     @Test
     void shouldReturnListOfLinkDtosWhenUserHasLinks() {
         // Arrange
-        Link link1 = new Link("https://github.com", "Git Hub",
-            "Repositories", user);
-        Link link2 = new Link("https://spring.io", "Spring Boot",
-            "Learning Spring Boot", user);
         when(linkRepository.findByUserId(user.getId())).thenReturn(List.of(link1, link2));
 
         // Act
@@ -53,24 +61,21 @@ public class LinkServiceTest {
 
         // Assert
         assertEquals(2, result.size());
-        assertEquals("Git Hub", result.get(0).title());
-        assertEquals("Spring Boot", result.get(1).title());
+        assertEquals(link1.getTitle(), result.get(0).title());
+        assertEquals(link2.getTitle(), result.get(1).title());
     }
 
     @Test
     void shouldReturnLinkDtoWhenIdExists() {
         // Arrange
-        Link link = new Link("https://github.com", "Git Hub",
-            "Repositories", user);
-        link.setId(TEST_ID1);
-        when(linkRepository.findById(link.getId())).thenReturn(Optional.of(link));
+        when(linkRepository.findById(link1.getId())).thenReturn(Optional.of(link1));
 
         // Act
-        Optional<LinkDto> result = linkService.getLinkById(link.getId());
+        Optional<LinkDto> result = linkService.getLinkById(link1.getId());
 
         // Assert
         assertTrue(result.isPresent());
-        assertEquals("Git Hub", result.get().title());
+        assertEquals(link1.getTitle(), result.get().title());
     }
 
     @Test
@@ -88,27 +93,21 @@ public class LinkServiceTest {
     @Test
     void shouldCreateLinkForGivenUser() {
         // Arrange
-        LinkDto linkDto = new LinkDto(TEST_ID3,"https://github.com",
-            "Git Hub", "Repositories");
-        Link savedLink = new Link("https://github.com",
-            "Git Hub", "Repositories", user);
-        savedLink.setId(TEST_ID1);
+        link1.setId(TEST_ID1);
         when(userRepository.findById(TEST_ID1)).thenReturn(Optional.of(user));
-        when(linkRepository.save(any(Link.class))).thenReturn(savedLink);
+        when(linkRepository.save(any(Link.class))).thenReturn(link1);
 
         // Act
         Optional<LinkDto> result = linkService.createLink(user.getId(), linkDto);
 
         // Assert
         assertTrue(result.isPresent());
-        assertEquals("Git Hub", result.get().title());
+        assertEquals(link1.getTitle(), result.get().title());
     }
 
     @Test
     void shouldThrowExceptionWhenUserNotFound() {
         // Arrange
-        LinkDto linkDto = new LinkDto(TEST_ID1,"https://github.com",
-            "Git Hub", "Repositories");
         when(userRepository.findById(TEST_ID3)).thenReturn(Optional.empty());
 
         // Act & Assert
@@ -120,8 +119,6 @@ public class LinkServiceTest {
     @Test
     void shouldThrowExceptionWhenLinkSaveFails(){
         // Arrange
-        LinkDto linkDto = new LinkDto(TEST_ID2,"https://github.com",
-            "Git Hub", "Repositories");
         when(userRepository.findById(TEST_ID1)).thenReturn(Optional.of(user));
         when(linkRepository.save(any(Link.class))).thenThrow(new RuntimeException("Database failure"));
 

@@ -5,12 +5,13 @@ import com.linkvault.model.Link;
 import com.linkvault.model.User;
 
 public class LinkMapper {
-    public static LinkDto toDto(Link link) {
+    public static LinkDto toDto(Link link, Long userId) {
         return new LinkDto(
             link.getId(),
             link.getUrl(),
             link.getTitle(),
-            link.getDescription()
+            link.getDescription(),
+            userId
         );
     }
 

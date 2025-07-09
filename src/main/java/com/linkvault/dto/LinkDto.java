@@ -1,4 +1,4 @@
 package com.linkvault.dto;
 
-public record LinkDto(Long id, String url, String title, String description) {
+public record LinkDto(Long id, String url, String title, String description, Long userId) {
 }

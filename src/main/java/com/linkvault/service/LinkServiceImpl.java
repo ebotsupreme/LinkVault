@@ -25,11 +25,11 @@ public class LinkServiceImpl implements LinkService{
         List<Link> links = linkRepository.findByUserId(userId);
 
         return links.stream()
-            .map(LinkMapper::toDto).toList();
+            .map(link -> LinkMapper.toDto(link, userId)).toList();
     }
 
     public Optional<LinkDto> getLinkById(Long linkId) {
-       return linkRepository.findById(linkId).map(LinkMapper::toDto);
+       return linkRepository.findById(linkId).map(link -> LinkMapper.toDto(link, link.getUser().getId()));
     }
 
     public Optional<LinkDto> createLink(Long userId, LinkDto linkDto) {
@@ -38,6 +38,6 @@ public class LinkServiceImpl implements LinkService{
         Link link = new Link(linkDto.url(), linkDto.title(), linkDto.description(), user);
 
         Link savedlink = linkRepository.save(link);
-        return Optional.of(LinkMapper.toDto(savedlink));
+        return Optional.of(LinkMapper.toDto(savedlink, link.getUser().getId()));
     }
 }
