@@ -1,5 +1,6 @@
 package com.linkvault.controller;
 
+import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.dto.LinkDto;
 import com.linkvault.service.LinkService;
 import org.springframework.http.ResponseEntity;
@@ -8,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/links")
+@RequestMapping(LinkEndpoints.BASE_LINKS)
 public class LinkController {
     private final LinkService linkService;
 
@@ -16,12 +17,12 @@ public class LinkController {
         this.linkService = linkService;
     }
 
-    @GetMapping("/user/{userId}")
+    @GetMapping(LinkEndpoints.BY_USER)
     public List<LinkDto> getAllLinksForUser(@PathVariable Long userId) {
         return linkService.getAllLinksForUser(userId);
     }
 
-    @GetMapping("/{linkId}")
+    @GetMapping(LinkEndpoints.BY_LINK_ID)
     public ResponseEntity<LinkDto> getLinkById(@PathVariable Long linkId) {
         return linkService.getLinkById(linkId)
             .map(ResponseEntity::ok)

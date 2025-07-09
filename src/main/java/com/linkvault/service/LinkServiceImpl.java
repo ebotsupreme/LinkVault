@@ -2,6 +2,7 @@ package com.linkvault.service;
 
 import com.linkvault.dto.LinkDto;
 import com.linkvault.exception.LinkNotFoundException;
+import com.linkvault.exception.LinkSaveException;
 import com.linkvault.exception.UserNotFoundException;
 import com.linkvault.mapper.LinkMapper;
 import com.linkvault.model.Link;
@@ -39,7 +40,12 @@ public class LinkServiceImpl implements LinkService{
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
         Link link = new Link(linkDto.url(), linkDto.title(), linkDto.description(), user);
-        Link savedlink = linkRepository.save(link);
-        return Optional.of(LinkMapper.toDto(savedlink, link.getUser().getId()));
+
+        try {
+            Link savedlink = linkRepository.save(link);
+            return Optional.of(LinkMapper.toDto(savedlink, link.getUser().getId()));
+        } catch (RuntimeException e) {
+            throw new LinkSaveException(linkDto);
+        }
     }
 }

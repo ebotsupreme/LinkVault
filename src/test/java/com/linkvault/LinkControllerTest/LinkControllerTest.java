@@ -1,6 +1,7 @@
 package com.linkvault.LinkControllerTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.controller.LinkController;
 import com.linkvault.dto.LinkDto;
 import com.linkvault.exception.LinkNotFoundException;
@@ -70,7 +71,7 @@ public class LinkControllerTest {
         when(linkService.getLinkById(linkDto1.id())).thenReturn(Optional.of(linkDto1));
 
         // Assert
-        mockMvc.perform(get("/api/links/" + TEST_ID1))
+        mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + TEST_ID1))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.title").value(linkDto1.title()));
     }
@@ -81,7 +82,7 @@ public class LinkControllerTest {
         when(linkService.getLinkById(TEST_ID1)).thenThrow(new LinkNotFoundException(TEST_ID1));
 
         // Assert
-        mockMvc.perform(get("/api/links/" + TEST_ID1))
+        mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + TEST_ID1))
             .andExpect(jsonPath("$.status").value(HttpStatus.NOT_FOUND.value()))
             .andExpect(jsonPath("$.message")
                 .value("Link with ID " + TEST_ID1 + " not found."));
@@ -94,7 +95,7 @@ public class LinkControllerTest {
         String json = objectMapper.writeValueAsString(linkDto2);
 
         // Assert
-        mockMvc.perform(post("/api/links")
+        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
             .andExpect(status().isOk())
@@ -109,7 +110,7 @@ public class LinkControllerTest {
         String json = objectMapper.writeValueAsString(linkDto2);
 
         // Assert
-        mockMvc.perform(post("/api/links")
+        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
             .andExpect(jsonPath("$.status").value(HttpStatus.NOT_FOUND.value()))
