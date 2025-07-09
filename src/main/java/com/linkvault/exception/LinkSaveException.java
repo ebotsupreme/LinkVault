@@ -1,9 +1,9 @@
 package com.linkvault.exception;
 
-import com.linkvault.model.Link;
+import com.linkvault.dto.LinkDto;
 
 public class LinkSaveException extends RuntimeException {
-    public LinkSaveException(Link link) {
-        super("Failed to save link with URL: " + link.getUrl());
+    public LinkSaveException(LinkDto linkDto) {
+        super("Failed to save link with URL: " + linkDto.url());
     }
 }

@@ -3,6 +3,8 @@ package com.linkvault.LinkControllerTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.controller.LinkController;
 import com.linkvault.dto.LinkDto;
+import com.linkvault.exception.LinkNotFoundException;
+import com.linkvault.exception.LinkSaveException;
 import com.linkvault.model.User;
 import com.linkvault.service.LinkService;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -57,8 +60,8 @@ public class LinkControllerTest {
         // Assert
         mockMvc.perform(get("/api/links/user/1"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].title").value("Git Hub"))
-            .andExpect(jsonPath("$[1].title").value("Spring Boot"));
+            .andExpect(jsonPath("$[0].title").value(linkDto1.title()))
+            .andExpect(jsonPath("$[1].title").value(linkDto2.title()));
     }
 
     @Test
@@ -69,18 +72,19 @@ public class LinkControllerTest {
         // Assert
         mockMvc.perform(get("/api/links/" + TEST_ID1))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.title").value("Git Hub"));
+            .andExpect(jsonPath("$.title").value(linkDto1.title()));
     }
 
     @Test
     void shouldReturnNotFoundStatusWhenLinkDoesNotExist() throws Exception {
         // Arrange
-        when(linkService.getLinkById(TEST_ID1)).thenReturn(Optional.empty());
+        when(linkService.getLinkById(TEST_ID1)).thenThrow(new LinkNotFoundException(TEST_ID1));
 
         // Assert
         mockMvc.perform(get("/api/links/" + TEST_ID1))
-            .andExpect(status().isNotFound())
-            .andExpect(content().string(""));
+            .andExpect(jsonPath("$.status").value(HttpStatus.NOT_FOUND.value()))
+            .andExpect(jsonPath("$.message")
+                .value("Link with ID " + TEST_ID1 + " not found."));
     }
 
     @Test
@@ -100,13 +104,16 @@ public class LinkControllerTest {
     @Test
     void shouldReturnNotFoundStatusWhenLinkSaveFails() throws Exception {
         // Arrange
-        when(linkService.createLink(TEST_ID1, linkDto2)).thenReturn(Optional.empty());
+        when(linkService.createLink(TEST_ID1, linkDto2)).thenThrow(
+            new LinkSaveException(linkDto2));
         String json = objectMapper.writeValueAsString(linkDto2);
 
         // Assert
         mockMvc.perform(post("/api/links")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
-            .andExpect(status().isNotFound());
+            .andExpect(jsonPath("$.status").value(HttpStatus.NOT_FOUND.value()))
+            .andExpect(jsonPath("$.message")
+                .value("Failed to save link with URL: " + linkDto2.url()));
     }
 }

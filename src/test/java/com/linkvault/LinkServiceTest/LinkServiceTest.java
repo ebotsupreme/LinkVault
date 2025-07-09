@@ -1,6 +1,9 @@
 package com.linkvault.LinkServiceTest;
 
 import com.linkvault.dto.LinkDto;
+import com.linkvault.exception.LinkNotFoundException;
+import com.linkvault.exception.LinkSaveException;
+import com.linkvault.exception.UserNotFoundException;
 import com.linkvault.model.Link;
 import com.linkvault.model.User;
 import com.linkvault.repository.LinkRepository;
@@ -83,11 +86,10 @@ public class LinkServiceTest {
         // Arrange
         when(linkRepository.findById(TEST_ID2)).thenReturn(Optional.empty());
 
-        // Act
-        Optional<LinkDto> result = linkService.getLinkById(TEST_ID2);
-
-        // Assert
-        assertTrue(result.isEmpty());
+        // Act & Assert
+        assertThrows(LinkNotFoundException.class, () -> {
+            linkService.getLinkById(TEST_ID2);
+        });
     }
 
     @Test
@@ -111,7 +113,7 @@ public class LinkServiceTest {
         when(userRepository.findById(TEST_ID3)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(UserNotFoundException.class, () -> {
             linkService.createLink(TEST_ID3, linkDto);
         });
     }
@@ -123,7 +125,7 @@ public class LinkServiceTest {
         when(linkRepository.save(any(Link.class))).thenThrow(new RuntimeException("Database failure"));
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(LinkSaveException.class, () -> {
             linkService.createLink(TEST_ID1, linkDto);
         });
     }
