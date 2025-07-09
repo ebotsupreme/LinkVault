@@ -10,6 +10,7 @@ import com.linkvault.repository.LinkRepository;
 import com.linkvault.repository.UserRepository;
 import com.linkvault.service.LinkService;
 import com.linkvault.service.LinkServiceImpl;
+import com.linkvault.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
+import static com.linkvault.util.TestDataFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -34,24 +36,14 @@ public class LinkServiceTest {
     private Link link1;
     private Link link2;
     private LinkDto linkDto;
-    private final Long TEST_ID1= 1L;
-    private final Long TEST_ID2 = 2L;
-    private final Long TEST_ID3 = 42L;
 
     @BeforeEach
     void setUp() {
         linkService = new LinkServiceImpl(linkRepository, userRepository);
-        user = new User("eddie", "password123");
-        user.setId(TEST_ID1);
-
-        link1 = new Link("https://github.com", "Git Hub",
-            "Repositories", user);
-        link1.setId(TEST_ID1);
-        link2 = new Link("https://spring.io", "Spring Boot",
-            "Learning Spring Boot", user);
-        link2.setId(TEST_ID2);
-        linkDto = new LinkDto(TEST_ID1,"https://github.com",
-            "Git Hub", "Repositories", user.getId());
+        user = TestDataFactory.createTestUser();
+        link1 = TestDataFactory.createLink1();
+        link2 = TestDataFactory.createLink2();
+        linkDto = TestDataFactory.createLinkDto1();
     }
 
     @Test

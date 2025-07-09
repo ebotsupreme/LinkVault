@@ -8,6 +8,7 @@ import com.linkvault.exception.LinkNotFoundException;
 import com.linkvault.exception.LinkSaveException;
 import com.linkvault.model.User;
 import com.linkvault.service.LinkService;
+import com.linkvault.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Optional;
 
+import static com.linkvault.util.TestDataFactory.TEST_ID1;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -38,19 +40,12 @@ public class LinkControllerTest {
     private ObjectMapper objectMapper;
     private LinkDto linkDto1;
     private LinkDto linkDto2;
-    private final Long TEST_ID1 = 1L;
-    private final Long TEST_ID2 = 2L;
 
     @BeforeEach
     void setUp() {
-
-        user = new User("eddie", "password123");
-        user.setId(TEST_ID1);
-
-        linkDto1 = new LinkDto(TEST_ID1, "https://github.com",
-            "Git Hub", "Repositories", user.getId());
-        linkDto2 = new LinkDto(TEST_ID2, "https://spring.io",
-            "Spring Boot", "Learning Spring Boot", user.getId());
+        user = TestDataFactory.createTestUser();
+        linkDto1 = TestDataFactory.createLinkDto1();
+        linkDto2 = TestDataFactory.createLinkDto2();
     }
 
     @Test
@@ -59,7 +54,9 @@ public class LinkControllerTest {
         when(linkService.getAllLinksForUser(user.getId())).thenReturn(List.of(linkDto1, linkDto2));
 
         // Assert
-        mockMvc.perform(get("/api/links/user/1"))
+        String url = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_USER
+            .replace("{userId", "1");
+        mockMvc.perform(get(url))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].title").value(linkDto1.title()))
             .andExpect(jsonPath("$[1].title").value(linkDto2.title()));
