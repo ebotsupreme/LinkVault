@@ -139,7 +139,7 @@ public class LinkServiceTest {
         when(linkRepository.save(any(Link.class))).thenReturn(link1);
 
         // Act
-        Optional<LinkDto> result = linkService.updateLink(user.getId(), linkDto2);
+        Optional<LinkDto> result = linkService.updateLink(link1.getId(), linkDto2);
 
         // Assert
         assertTrue(result.isPresent());
@@ -152,10 +152,10 @@ public class LinkServiceTest {
     @Test
     void shouldThrowExceptionWhenUserNotFoundDuringUpdate() {
         // Arrange
-        when(userRepository.findById(TEST_ID3)).thenReturn(Optional.empty());
+        when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(UserNotFoundException.class, () -> linkService.updateLink(TEST_ID3, linkDto1));
+        assertThrows(UserNotFoundException.class, () -> linkService.updateLink(link1.getId(), linkDto1));
     }
 
     @Test
@@ -165,7 +165,7 @@ public class LinkServiceTest {
         when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(LinkNotFoundException.class, () -> linkService.updateLink(user.getId(), linkDto2));
+        assertThrows(LinkNotFoundException.class, () -> linkService.updateLink(linkDto2.id(), linkDto2));
     }
 
     @Test
@@ -176,6 +176,6 @@ public class LinkServiceTest {
         when(linkRepository.save(any(Link.class))).thenThrow(new RuntimeException("DB error"));
 
         // Act & Assert
-        assertThrows(LinkSaveException.class, () -> linkService.updateLink(user.getId(), linkDto2));
+        assertThrows(LinkSaveException.class, () -> linkService.updateLink(link2.getId(), linkDto2));
     }
 }

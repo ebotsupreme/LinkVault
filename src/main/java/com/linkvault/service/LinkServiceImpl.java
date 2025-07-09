@@ -42,8 +42,26 @@ public class LinkServiceImpl implements LinkService{
         Link link = new Link(linkDto.url(), linkDto.title(), linkDto.description(), user);
 
         try {
-            Link savedlink = linkRepository.save(link);
-            return Optional.of(LinkMapper.toDto(savedlink, link.getUser().getId()));
+            Link savedLink = linkRepository.save(link);
+            return Optional.of(LinkMapper.toDto(savedLink, link.getUser().getId()));
+        } catch (RuntimeException e) {
+            throw new LinkSaveException(linkDto);
+        }
+    }
+
+    public Optional<LinkDto> updateLink(Long linkId, LinkDto linkDto) {
+        User user = userRepository.findById(linkDto.userId())
+            .orElseThrow(() -> new UserNotFoundException(linkDto.userId()));
+        Link existingLink = linkRepository.findById(linkId)
+            .orElseThrow(() -> new LinkNotFoundException(linkId));
+        existingLink.setUrl(linkDto.url());
+        existingLink.setTitle(linkDto.title());
+        existingLink.setDescription(linkDto.description());
+        existingLink.setUser(user);
+
+        try {
+            Link updatedLink = linkRepository.save(existingLink);
+            return Optional.of(LinkMapper.toDto(updatedLink, existingLink.getUser().getId()));
         } catch (RuntimeException e) {
             throw new LinkSaveException(linkDto);
         }

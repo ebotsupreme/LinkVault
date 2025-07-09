@@ -36,4 +36,16 @@ public class LinkController {
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @PutMapping(LinkEndpoints.BY_LINK_ID)
+    public ResponseEntity<LinkDto> updateLink(
+        @PathVariable Long linkId,
+        @RequestBody LinkDto linkDto
+    ) {
+        if (!linkId.equals(linkDto.id())) {
+            return ResponseEntity.badRequest().build();
+        }
+        return linkService.updateLink(linkId, linkDto)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 }
