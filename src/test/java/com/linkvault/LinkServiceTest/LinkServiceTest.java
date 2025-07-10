@@ -11,7 +11,6 @@ import com.linkvault.repository.UserRepository;
 import com.linkvault.service.LinkService;
 import com.linkvault.service.LinkServiceImpl;
 import com.linkvault.util.TestDataFactory;
-import jakarta.validation.constraints.AssertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -129,7 +128,7 @@ public class LinkServiceTest {
     void shouldUpdateLinkForGivenUser() {
         // Arrange
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(linkRepository.findById(link2.getId())).thenReturn(Optional.of(link2));
+        when(linkRepository.findById(link1.getId())).thenReturn(Optional.of(link1));
 
         // Simulate update
         link1.setUrl(linkDto2.url());

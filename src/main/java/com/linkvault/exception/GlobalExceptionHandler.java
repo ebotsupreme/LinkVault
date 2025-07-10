@@ -38,9 +38,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(LinkSaveException.class)
     public ResponseEntity<ApiErrorResponse> handleLinkSave(LinkSaveException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 ex.getMessage(),
                 Instant.now().toString(),
                 request.getRequestURI()

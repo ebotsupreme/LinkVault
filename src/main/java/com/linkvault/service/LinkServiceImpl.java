@@ -45,7 +45,7 @@ public class LinkServiceImpl implements LinkService{
             Link savedLink = linkRepository.save(link);
             return Optional.of(LinkMapper.toDto(savedLink, link.getUser().getId()));
         } catch (RuntimeException e) {
-            throw new LinkSaveException(linkDto);
+            throw new LinkSaveException(linkDto, e);
         }
     }
 
@@ -63,7 +63,7 @@ public class LinkServiceImpl implements LinkService{
             Link updatedLink = linkRepository.save(existingLink);
             return Optional.of(LinkMapper.toDto(updatedLink, existingLink.getUser().getId()));
         } catch (RuntimeException e) {
-            throw new LinkSaveException(linkDto);
+            throw new LinkSaveException(linkDto, e);
         }
     }
 }
