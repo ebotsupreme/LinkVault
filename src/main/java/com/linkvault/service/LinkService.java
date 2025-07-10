@@ -11,4 +11,5 @@ public interface LinkService {
     Optional<LinkDto> getLinkById(Long linkId);
     Optional<LinkDto> createLink(Long userId, LinkDto linkDto);
     Optional<LinkDto> updateLink(Long linkId, LinkDto linkDto);
+    void deleteLink(Long linkId);
 }

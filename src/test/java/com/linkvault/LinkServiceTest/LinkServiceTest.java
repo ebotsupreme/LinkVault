@@ -1,10 +1,7 @@
 package com.linkvault.LinkServiceTest;
 
 import com.linkvault.dto.LinkDto;
-import com.linkvault.exception.ExceptionMessages;
-import com.linkvault.exception.LinkNotFoundException;
-import com.linkvault.exception.LinkSaveException;
-import com.linkvault.exception.UserNotFoundException;
+import com.linkvault.exception.*;
 import com.linkvault.model.Link;
 import com.linkvault.model.User;
 import com.linkvault.repository.LinkRepository;
@@ -24,7 +21,7 @@ import java.util.Optional;
 import static com.linkvault.util.TestDataFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class LinkServiceTest {
@@ -61,6 +58,8 @@ public class LinkServiceTest {
         assertEquals(2, result.size());
         assertEquals(link1.getTitle(), result.get(0).title());
         assertEquals(link2.getTitle(), result.get(1).title());
+
+        verify(linkRepository).findByUserId(user.getId());
     }
 
     @Test
@@ -74,6 +73,8 @@ public class LinkServiceTest {
         // Assert
         assertTrue(result.isPresent());
         assertEquals(link1.getTitle(), result.get().title());
+
+        verify(linkRepository).findById(link1.getId());
     }
 
     @Test
@@ -100,6 +101,9 @@ public class LinkServiceTest {
         assertTrue(result.isPresent());
         LinkDto created = result.get();
         assertEquals(link1.getTitle(), created.title());
+
+        verify(userRepository).findById(user.getId());
+        verify(linkRepository).save(any(Link.class));
     }
 
     @Test
@@ -147,6 +151,10 @@ public class LinkServiceTest {
         assertEquals(link1.getUrl(), updated.url());
         assertEquals(link1.getTitle(), updated.title());
         assertEquals(link1.getDescription(), updated.description());
+
+        verify(userRepository).findById(user.getId());
+        verify(linkRepository).findById(link1.getId());
+        verify(linkRepository).save(link1);
     }
 
     @Test
@@ -177,5 +185,52 @@ public class LinkServiceTest {
 
         // Act & Assert
         assertThrows(LinkSaveException.class, () -> linkService.updateLink(link2.getId(), linkDto2));
+    }
+
+    @Test
+    void shouldDeleteLinkForGivenUser() {
+        // Arrange
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(linkRepository.findById(linkDto1.id())).thenReturn(Optional.of(link1));
+        doNothing().when(linkRepository).deleteById(link1.getId());
+
+        // Act
+        linkService.deleteLink(link1.getId());
+
+        // Assert
+        verify(userRepository).findById(user.getId());
+        verify(linkRepository).findById(linkDto1.id());
+        verify(linkRepository).deleteById(link1.getId());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUserNotFoundDuringDelete() {
+        // Arrange
+        when(linkRepository.findById(linkDto1.id())).thenReturn(Optional.of(link1));
+        when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(UserNotFoundException.class, () -> linkService.deleteLink(link1.getId()));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenLinkNotFoundDuringDelete() {
+        // Arrange
+        when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(LinkNotFoundException.class, () -> linkService.deleteLink(linkDto2.id()));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenLinkDeleteFails() {
+        // Arrange
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.of(link2));
+        doThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
+            .when(linkRepository).deleteById(link2.getId());
+
+        // Act & Assert
+        assertThrows(LinkDeleteException.class, () -> linkService.deleteLink(link2.getId()));
     }
 }

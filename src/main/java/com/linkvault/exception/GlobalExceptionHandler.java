@@ -47,6 +47,17 @@ public class GlobalExceptionHandler {
             ));
     }
 
+    @ExceptionHandler(LinkDeleteException.class)
+    public ResponseEntity<ApiErrorResponse> handleLinkSave(LinkDeleteException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new ApiErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ex.getMessage(),
+                Instant.now().toString(),
+                request.getRequestURI()
+            ));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGeneric(Exception ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

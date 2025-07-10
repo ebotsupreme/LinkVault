@@ -5,6 +5,7 @@ import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.controller.LinkController;
 import com.linkvault.dto.LinkDto;
 import com.linkvault.exception.ExceptionMessages;
+import com.linkvault.exception.LinkDeleteException;
 import com.linkvault.exception.LinkNotFoundException;
 import com.linkvault.exception.LinkSaveException;
 import com.linkvault.model.User;
@@ -23,7 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -100,7 +101,7 @@ public class LinkControllerTest {
     }
 
     @Test
-    void shouldReturnNotFoundStatusWhenLinkSaveFails() throws Exception {
+    void shouldReturnServerErrorStatusWhenLinkSaveFails() throws Exception {
         // Arrange
         when(linkService.createLink(user.getId(), linkDto2)).thenThrow(
             new LinkSaveException(linkDto2, new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
@@ -122,9 +123,9 @@ public class LinkControllerTest {
         String json = objectMapper.writeValueAsString(linkDto1);
 
         // Assert
-        String linkDtoId = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
                 .replace("{linkId}", linkDto1.id().toString());
-        mockMvc.perform(put(linkDtoId)
+        mockMvc.perform(put(linkDtoIdPath)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
             .andExpect(status().isOk())
@@ -132,21 +133,47 @@ public class LinkControllerTest {
     }
 
     @Test
-    void shouldReturnNotFoundStatusWhenLinkSaveFailsOnUpdate() throws Exception {
+    void shouldReturnServerErrorStatusWhenLinkSaveFailsOnUpdate() throws Exception {
         // Arrange
         when(linkService.updateLink(linkDto1.id(), linkDto1)).thenThrow(
             new LinkSaveException(linkDto1, new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
         String json = objectMapper.writeValueAsString(linkDto1);
 
         // Assert
-        String linkDtoId = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
             .replace("{linkId}", linkDto1.id().toString());
-        mockMvc.perform(put(linkDtoId)
+        mockMvc.perform(put(linkDtoIdPath)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
             .andExpect(jsonPath("$.status").value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
             .andExpect(jsonPath("$.message")
                 .value(String.format(ExceptionMessages.LINK_SAVE_FAILED, linkDto1.url())));
+    }
 
+    @Test
+    void shouldReturnLinkWhenLinkIsDeleted() throws Exception {
+        // Arrange
+        doNothing().when(linkService).deleteLink(linkDto1.id());
+
+        // Assert
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
+            .replace("{linkId}", linkDto1.id().toString());
+        mockMvc.perform(delete(linkDtoIdPath)).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void shouldReturnServerErrorStatusWhenLinkFailsToDelete() throws Exception {
+        // Arrange
+        doThrow(
+            new LinkDeleteException(linkDto1, new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
+        ).when(linkService).deleteLink(linkDto1.id());
+
+        // Assert
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
+            .replace("{linkId}", linkDto1.id().toString());
+        mockMvc.perform(delete(linkDtoIdPath))
+            .andExpect(status().isInternalServerError())
+            .andExpect(jsonPath("$.message").value(
+                String.format(ExceptionMessages.LINK_DELETE_FAILED, linkDto1.url())));
     }
 }

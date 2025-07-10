@@ -5,4 +5,7 @@ public class ExceptionMessages {
     public static final String LINK_SAVE_FAILED = "Failed to save link with URL: %s";
     public static final String USER_NOT_FOUND = "User with ID %d not found.";
     public static final String DATABASE_FAILURE = "Simulated database failure";
+    public static final String LINK_DELETE_FAILED = "Failed to delete link with URL: %s";
+    public static final String USER_NOT_AUTHORIZED_TO_UPDATE = "User not authorized to update this link.";
+    public static final String USER_NOT_AUTHORIZED_TO_DELETE = "User not authorized to delete this link.";
 }

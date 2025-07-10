@@ -1,9 +1,7 @@
 package com.linkvault.service;
 
 import com.linkvault.dto.LinkDto;
-import com.linkvault.exception.LinkNotFoundException;
-import com.linkvault.exception.LinkSaveException;
-import com.linkvault.exception.UserNotFoundException;
+import com.linkvault.exception.*;
 import com.linkvault.mapper.LinkMapper;
 import com.linkvault.model.Link;
 import com.linkvault.model.User;
@@ -59,11 +57,35 @@ public class LinkServiceImpl implements LinkService{
         existingLink.setDescription(linkDto.description());
         existingLink.setUser(user);
 
+        if (!existingLink.getUser().getId().equals(user.getId())) {
+            throw new UnauthorizedAccessException(ExceptionMessages.USER_NOT_AUTHORIZED_TO_UPDATE);
+        }
+
         try {
             Link updatedLink = linkRepository.save(existingLink);
             return Optional.of(LinkMapper.toDto(updatedLink, existingLink.getUser().getId()));
         } catch (RuntimeException e) {
             throw new LinkSaveException(linkDto, e);
+        }
+    }
+
+    public void deleteLink(Long linkId) {
+        Link linkToDelete = linkRepository.findById(linkId)
+            .orElseThrow(() -> new LinkNotFoundException(linkId));
+        User user = userRepository.findById(linkToDelete.getUser().getId())
+            .orElseThrow(() -> new UserNotFoundException(linkToDelete.getUser().getId()));
+        LinkDto linkToDeleteDto = new LinkDto(
+            linkToDelete.getId(), linkToDelete.getUrl(), linkToDelete.getTitle(),
+            linkToDelete.getDescription(), linkToDelete.getUser().getId());
+
+        if (!linkToDelete.getUser().getId().equals(user.getId())) {
+            throw new UnauthorizedAccessException(ExceptionMessages.USER_NOT_AUTHORIZED_TO_DELETE);
+        }
+
+        try {
+            linkRepository.deleteById(linkId);
+        } catch (RuntimeException e) {
+            throw new LinkDeleteException(linkToDeleteDto, e);
         }
     }
 }

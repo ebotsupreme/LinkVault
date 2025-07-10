@@ -48,4 +48,10 @@ public class LinkController {
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    @DeleteMapping(LinkEndpoints.BY_LINK_ID)
+    public ResponseEntity<LinkDto> deleteLink(@PathVariable Long linkId) {
+        linkService.deleteLink(linkId);
+        return ResponseEntity.noContent().build();
+    }
 }
