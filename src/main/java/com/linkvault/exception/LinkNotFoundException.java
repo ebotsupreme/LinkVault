@@ -2,10 +2,10 @@ package com.linkvault.exception;
 
 public class LinkNotFoundException extends RuntimeException {
     public LinkNotFoundException (Long linkId) {
-        super("Link with ID " + linkId + " not found.");
+        super(String.format(ExceptionMessages.LINK_NOT_FOUND, linkId));
     }
 
     public LinkNotFoundException (Long linkId, Throwable cause) {
-        super("Link with ID " + linkId + " not found.", cause);
+        super(String.format(ExceptionMessages.LINK_NOT_FOUND, linkId), cause);
     }
 }

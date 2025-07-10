@@ -1,6 +1,7 @@
 package com.linkvault.LinkServiceTest;
 
 import com.linkvault.dto.LinkDto;
+import com.linkvault.exception.ExceptionMessages;
 import com.linkvault.exception.LinkNotFoundException;
 import com.linkvault.exception.LinkSaveException;
 import com.linkvault.exception.UserNotFoundException;
@@ -116,7 +117,7 @@ public class LinkServiceTest {
     void shouldThrowExceptionWhenLinkSaveFails(){
         // Arrange
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(linkRepository.save(any(Link.class))).thenThrow(new RuntimeException("Database failure"));
+        when(linkRepository.save(any(Link.class))).thenThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE));
 
         // Act & Assert
         assertThrows(LinkSaveException.class, () -> {
@@ -172,7 +173,7 @@ public class LinkServiceTest {
         // Arrange
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.of(link2));
-        when(linkRepository.save(any(Link.class))).thenThrow(new RuntimeException("DB error"));
+        when(linkRepository.save(any(Link.class))).thenThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE));
 
         // Act & Assert
         assertThrows(LinkSaveException.class, () -> linkService.updateLink(link2.getId(), linkDto2));

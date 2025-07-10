@@ -1,10 +1,10 @@
 package com.linkvault.LinkControllerTest;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.controller.LinkController;
 import com.linkvault.dto.LinkDto;
+import com.linkvault.exception.ExceptionMessages;
 import com.linkvault.exception.LinkNotFoundException;
 import com.linkvault.exception.LinkSaveException;
 import com.linkvault.model.User;
@@ -82,7 +82,7 @@ public class LinkControllerTest {
         mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkDto1.id()))
             .andExpect(jsonPath("$.status").value(HttpStatus.NOT_FOUND.value()))
             .andExpect(jsonPath("$.message")
-                .value("Link with ID " + linkDto1.id() + " not found."));
+                .value(String.format(ExceptionMessages.LINK_NOT_FOUND, linkDto1.id())));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class LinkControllerTest {
     void shouldReturnNotFoundStatusWhenLinkSaveFails() throws Exception {
         // Arrange
         when(linkService.createLink(user.getId(), linkDto2)).thenThrow(
-            new LinkSaveException(linkDto2, new RuntimeException("Simulated database failure")));
+            new LinkSaveException(linkDto2, new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
         String json = objectMapper.writeValueAsString(linkDto2);
 
         // Assert
@@ -112,7 +112,7 @@ public class LinkControllerTest {
                 .content(json))
             .andExpect(jsonPath("$.status").value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
             .andExpect(jsonPath("$.message")
-                .value("Failed to save link with URL: " + linkDto2.url()));
+                .value(String.format(ExceptionMessages.LINK_SAVE_FAILED, linkDto2.url())));
     }
 
     @Test
@@ -135,7 +135,7 @@ public class LinkControllerTest {
     void shouldReturnNotFoundStatusWhenLinkSaveFailsOnUpdate() throws Exception {
         // Arrange
         when(linkService.updateLink(linkDto1.id(), linkDto1)).thenThrow(
-            new LinkSaveException(linkDto1, new RuntimeException("Simulated database failure")));
+            new LinkSaveException(linkDto1, new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
         String json = objectMapper.writeValueAsString(linkDto1);
 
         // Assert
@@ -146,6 +146,7 @@ public class LinkControllerTest {
                 .content(json))
             .andExpect(jsonPath("$.status").value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
             .andExpect(jsonPath("$.message")
-                .value("Failed to save link with URL: " + linkDto1.url()));
+                .value(String.format(ExceptionMessages.LINK_SAVE_FAILED, linkDto1.url())));
+
     }
 }
