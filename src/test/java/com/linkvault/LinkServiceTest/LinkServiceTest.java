@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -232,5 +233,20 @@ public class LinkServiceTest {
 
         // Act & Assert
         assertThrows(LinkDeleteException.class, () -> linkService.deleteLink(link2.getId()));
+    }
+
+    @Test
+    void shouldDeleteAllLinksForGivenUser() {
+        // Arrange
+        List<Link> linkList = new ArrayList<>(List.of(link1, link2));
+        when(linkRepository.findByUserId(user.getId())).thenReturn(linkList);
+        doNothing().when(linkRepository).deleteAll(linkList);
+
+        // Act
+        linkService.deleteAllLinksByUser(user.getId());
+
+        // Assert
+        verify(linkRepository).findByUserId(user.getId());
+        verify(linkRepository).deleteAll(linkList);
     }
 }

@@ -10,6 +10,7 @@ import com.linkvault.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -86,6 +87,20 @@ public class LinkServiceImpl implements LinkService{
             linkRepository.deleteById(linkId);
         } catch (RuntimeException e) {
             throw new LinkDeleteException(linkToDeleteDto, e);
+        }
+    }
+
+    public void deleteAllLinksByUser(Long userId) {
+        List<Link> links = linkRepository.findByUserId(userId);
+
+        if (links.isEmpty()) {
+            throw new LinksNotFoundException(userId);
+        }
+
+        try {
+            linkRepository.deleteAll(links);
+        } catch (RuntimeException e) {
+            throw new LinksDeleteException(userId, e);
         }
     }
 }
