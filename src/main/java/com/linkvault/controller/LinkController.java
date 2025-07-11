@@ -2,7 +2,6 @@ package com.linkvault.controller;
 
 import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.dto.LinkDto;
-import com.linkvault.model.Link;
 import com.linkvault.service.LinkService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

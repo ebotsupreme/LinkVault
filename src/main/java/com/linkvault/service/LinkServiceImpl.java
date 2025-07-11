@@ -10,7 +10,6 @@ import com.linkvault.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -59,7 +58,9 @@ public class LinkServiceImpl implements LinkService{
         existingLink.setUser(user);
 
         if (!existingLink.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedAccessException(ExceptionMessages.USER_NOT_AUTHORIZED_TO_UPDATE);
+            throw new UnauthorizedAccessException(
+                ExceptionMessages.USER_NOT_AUTHORIZED_TO_UPDATE, user.getId()
+            );
         }
 
         try {
@@ -80,7 +81,9 @@ public class LinkServiceImpl implements LinkService{
             linkToDelete.getDescription(), linkToDelete.getUser().getId());
 
         if (!linkToDelete.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedAccessException(ExceptionMessages.USER_NOT_AUTHORIZED_TO_DELETE);
+            throw new UnauthorizedAccessException(
+                ExceptionMessages.USER_NOT_AUTHORIZED_TO_DELETE, user.getId()
+            );
         }
 
         try {
