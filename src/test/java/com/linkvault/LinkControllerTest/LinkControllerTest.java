@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.controller.LinkController;
 import com.linkvault.dto.LinkDto;
-import com.linkvault.exception.ExceptionMessages;
-import com.linkvault.exception.LinkDeleteException;
-import com.linkvault.exception.LinkNotFoundException;
-import com.linkvault.exception.LinkSaveException;
+import com.linkvault.exception.*;
 import com.linkvault.model.User;
 import com.linkvault.service.LinkService;
 import com.linkvault.util.TestDataFactory;
@@ -51,7 +48,8 @@ public class LinkControllerTest {
     @Test
     void shouldReturnAllLinksForUserWhenUserHasLinks() throws Exception {
         // Arrange
-        when(linkService.getAllLinksForUser(user.getId())).thenReturn(List.of(linkDto1, linkDto2));
+        when(linkService.getAllLinksForUser(user.getId()))
+            .thenReturn(List.of(linkDto1, linkDto2));
 
         // Assert
         String url = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_USER
@@ -76,20 +74,23 @@ public class LinkControllerTest {
     @Test
     void shouldReturnNotFoundStatusWhenLinkDoesNotExist() throws Exception {
         // Arrange
-        when(linkService.getLinkById(linkDto1.id())).thenThrow(new LinkNotFoundException(
-            linkDto1.id(), new RuntimeException()));
+        when(linkService.getLinkById(linkDto1.id()))
+            .thenThrow(new LinkNotFoundException(linkDto1.id(),
+                new RuntimeException()));
 
         // Assert
         mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkDto1.id()))
             .andExpect(jsonPath("$.status").value(HttpStatus.NOT_FOUND.value()))
             .andExpect(jsonPath("$.message")
-                .value(String.format(ExceptionMessages.LINK_NOT_FOUND, linkDto1.id())));
+                .value(String.format(ExceptionMessages.LINK_NOT_FOUND, linkDto1.id())
+                ));
     }
 
     @Test
     void shouldReturnLinkWhenNewLinkIsCreated() throws Exception {
         // Arrange
-        when(linkService.createLink(user.getId(), linkDto2)).thenReturn(Optional.of(linkDto2));
+        when(linkService.createLink(user.getId(), linkDto2))
+            .thenReturn(Optional.of(linkDto2));
         String json = objectMapper.writeValueAsString(linkDto2);
 
         // Assert
@@ -104,22 +105,26 @@ public class LinkControllerTest {
     void shouldReturnServerErrorStatusWhenLinkSaveFails() throws Exception {
         // Arrange
         when(linkService.createLink(user.getId(), linkDto2)).thenThrow(
-            new LinkSaveException(linkDto2, new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
+            new LinkSaveException(linkDto2,
+                new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
         String json = objectMapper.writeValueAsString(linkDto2);
 
         // Assert
         mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
-            .andExpect(jsonPath("$.status").value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
+            .andExpect(jsonPath("$.status")
+                .value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
             .andExpect(jsonPath("$.message")
-                .value(String.format(ExceptionMessages.LINK_SAVE_FAILED, linkDto2.url())));
+                .value(String.format(ExceptionMessages.LINK_SAVE_FAILED, linkDto2.url())
+                ));
     }
 
     @Test
     void shouldReturnLinkWhenLinkIsUpdated() throws Exception {
         // Arrange
-        when(linkService.updateLink(linkDto1.id(), linkDto1)).thenReturn(Optional.of(linkDto1));
+        when(linkService.updateLink(linkDto1.id(),
+            linkDto1)).thenReturn(Optional.of(linkDto1));
         String json = objectMapper.writeValueAsString(linkDto1);
 
         // Assert
@@ -136,7 +141,8 @@ public class LinkControllerTest {
     void shouldReturnServerErrorStatusWhenLinkSaveFailsOnUpdate() throws Exception {
         // Arrange
         when(linkService.updateLink(linkDto1.id(), linkDto1)).thenThrow(
-            new LinkSaveException(linkDto1, new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
+            new LinkSaveException(linkDto1,
+                new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
         String json = objectMapper.writeValueAsString(linkDto1);
 
         // Assert
@@ -145,13 +151,15 @@ public class LinkControllerTest {
         mockMvc.perform(put(linkDtoIdPath)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
-            .andExpect(jsonPath("$.status").value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
+            .andExpect(jsonPath("$.status")
+                .value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
             .andExpect(jsonPath("$.message")
-                .value(String.format(ExceptionMessages.LINK_SAVE_FAILED, linkDto1.url())));
+                .value(String.format(ExceptionMessages.LINK_SAVE_FAILED, linkDto1.url())
+                ));
     }
 
     @Test
-    void shouldReturnLinkWhenLinkIsDeleted() throws Exception {
+    void shouldReturnNoContentStatusWhenLinkIsDeleted() throws Exception {
         // Arrange
         doNothing().when(linkService).deleteLink(linkDto1.id());
 
@@ -165,7 +173,8 @@ public class LinkControllerTest {
     void shouldReturnServerErrorStatusWhenLinkFailsToDelete() throws Exception {
         // Arrange
         doThrow(
-            new LinkDeleteException(linkDto1, new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
+            new LinkDeleteException(linkDto1,
+                new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
         ).when(linkService).deleteLink(linkDto1.id());
 
         // Assert
@@ -174,6 +183,35 @@ public class LinkControllerTest {
         mockMvc.perform(delete(linkDtoIdPath))
             .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.message").value(
-                String.format(ExceptionMessages.LINK_DELETE_FAILED, linkDto1.url())));
+                String.format(ExceptionMessages.LINK_DELETE_FAILED, linkDto1.url())
+            ));
+    }
+
+    @Test
+    void shouldReturnNoContentStatusWhenAllLinksAreDeleted() throws Exception {
+        // Arrange
+        doNothing().when(linkService).deleteAllLinksByUser(user.getId());
+
+        // Assert
+        String userIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_USER
+            .replace("{userId}", user.getId().toString());
+        mockMvc.perform(delete(userIdPath)).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void shouldReturnServerErrorStatusWhenAllLinksFailToDelete() throws Exception {
+        // Arrange
+        doThrow(new LinksDeleteException(user.getId(),
+            new RuntimeException(ExceptionMessages.DATABASE_FAILURE)))
+            .when(linkService).deleteAllLinksByUser(user.getId());
+
+        // Assert
+        String userIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_USER
+            .replace("{userId}", user.getId().toString());
+        mockMvc.perform(delete(userIdPath))
+            .andExpect(status().isInternalServerError())
+            .andExpect(jsonPath("$.message").value(
+                String.format(ExceptionMessages.LINKS_DELETE_FAILED, user.getId())
+            ));
     }
 }

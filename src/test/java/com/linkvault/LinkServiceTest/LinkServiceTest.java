@@ -122,7 +122,8 @@ public class LinkServiceTest {
     void shouldThrowExceptionWhenLinkSaveFails(){
         // Arrange
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(linkRepository.save(any(Link.class))).thenThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE));
+        when(linkRepository.save(any(Link.class)))
+            .thenThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE));
 
         // Act & Assert
         assertThrows(LinkSaveException.class, () -> {
@@ -164,7 +165,8 @@ public class LinkServiceTest {
         when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(UserNotFoundException.class, () -> linkService.updateLink(link1.getId(), linkDto1));
+        assertThrows(UserNotFoundException.class, () ->
+            linkService.updateLink(link1.getId(), linkDto1));
     }
 
     @Test
@@ -174,7 +176,8 @@ public class LinkServiceTest {
         when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(LinkNotFoundException.class, () -> linkService.updateLink(linkDto2.id(), linkDto2));
+        assertThrows(LinkNotFoundException.class, () ->
+            linkService.updateLink(linkDto2.id(), linkDto2));
     }
 
     @Test
@@ -182,10 +185,12 @@ public class LinkServiceTest {
         // Arrange
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.of(link2));
-        when(linkRepository.save(any(Link.class))).thenThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE));
+        when(linkRepository.save(any(Link.class)))
+            .thenThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE));
 
         // Act & Assert
-        assertThrows(LinkSaveException.class, () -> linkService.updateLink(link2.getId(), linkDto2));
+        assertThrows(LinkSaveException.class, () ->
+            linkService.updateLink(link2.getId(), linkDto2));
     }
 
     @Test
@@ -211,7 +216,8 @@ public class LinkServiceTest {
         when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(UserNotFoundException.class, () -> linkService.deleteLink(link1.getId()));
+        assertThrows(UserNotFoundException.class, () ->
+            linkService.deleteLink(link1.getId()));
     }
 
     @Test
@@ -220,7 +226,8 @@ public class LinkServiceTest {
         when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(LinkNotFoundException.class, () -> linkService.deleteLink(linkDto2.id()));
+        assertThrows(LinkNotFoundException.class, () ->
+            linkService.deleteLink(linkDto2.id()));
     }
 
     @Test
@@ -232,7 +239,8 @@ public class LinkServiceTest {
             .when(linkRepository).deleteById(link2.getId());
 
         // Act & Assert
-        assertThrows(LinkDeleteException.class, () -> linkService.deleteLink(link2.getId()));
+        assertThrows(LinkDeleteException.class, () ->
+            linkService.deleteLink(link2.getId()));
     }
 
     @Test
@@ -248,5 +256,28 @@ public class LinkServiceTest {
         // Assert
         verify(linkRepository).findByUserId(user.getId());
         verify(linkRepository).deleteAll(linkList);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenLinksNotFoundDuringDeleteAll() {
+        // Arrange
+        when(linkRepository.findByUserId(user.getId())).thenReturn(List.of());
+
+        // Act & Assert
+        assertThrows(LinksNotFoundException.class, () ->
+            linkService.deleteAllLinksByUser(user.getId()));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDeleteAllLFails() {
+        // Arrange
+        List<Link> linksToDelete = new ArrayList<>(List.of(link1, link2));
+        when(linkRepository.findByUserId(user.getId())).thenReturn(linksToDelete);
+        doThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
+            .when(linkRepository).deleteAll(linksToDelete);
+
+        // Act & Assert
+        assertThrows(LinksDeleteException.class, () ->
+            linkService.deleteAllLinksByUser(user.getId()));
     }
 }

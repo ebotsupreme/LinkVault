@@ -2,6 +2,7 @@ package com.linkvault.controller;
 
 import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.dto.LinkDto;
+import com.linkvault.model.Link;
 import com.linkvault.service.LinkService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,8 +51,14 @@ public class LinkController {
     }
 
     @DeleteMapping(LinkEndpoints.BY_LINK_ID)
-    public ResponseEntity<LinkDto> deleteLink(@PathVariable Long linkId) {
+    public ResponseEntity<Void> deleteLink(@PathVariable Long linkId) {
         linkService.deleteLink(linkId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping(LinkEndpoints.BY_USER)
+    public ResponseEntity<Void> deleteAllLinksByUser(@PathVariable Long userId) {
+        linkService.deleteAllLinksByUser(userId);
         return ResponseEntity.noContent().build();
     }
 }
