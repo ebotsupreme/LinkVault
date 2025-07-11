@@ -16,8 +16,10 @@ public class DataLoader {
             User user = new User("eddie", "password123");
             userRepository.save(user);
 
-            Link link1 = new Link("https://github.com", "Git Hub", "Repositories", user);
-            Link link2 = new Link("https://spring.io", "Spring Boot", "Learning Spring Boot", user);
+            Link link1 = new Link(
+                "https://github.com", "Git Hub", "Repositories", user);
+            Link link2 = new Link(
+                "https://spring.io", "Spring Boot", "Learning Spring Boot", user);
 
             linkRepository.save(link1);
             linkRepository.save(link2);
