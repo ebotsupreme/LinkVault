@@ -4,12 +4,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.time.Instant;
 
 import static com.linkvault.util.LogUtils.*;
+import java.util.List;
 
 @Slf4j
 @ControllerAdvice
@@ -23,6 +25,7 @@ public class GlobalExceptionHandler {
             .body(new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -37,6 +40,7 @@ public class GlobalExceptionHandler {
             .body(new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -51,6 +55,7 @@ public class GlobalExceptionHandler {
             .body(new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -66,6 +71,7 @@ public class GlobalExceptionHandler {
             .body(new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -81,6 +87,7 @@ public class GlobalExceptionHandler {
             .body(new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -96,6 +103,7 @@ public class GlobalExceptionHandler {
             .body(new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -111,6 +119,7 @@ public class GlobalExceptionHandler {
             .body(new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -125,8 +134,30 @@ public class GlobalExceptionHandler {
            .body(new ApiErrorResponse(
                HttpStatus.FORBIDDEN.value(),
                ex.getMessage(),
+               null,
                Instant.now().toString(),
                request.getRequestURI()
            ));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponse> handleValidationErrors(
+        MethodArgumentNotValidException ex, HttpServletRequest request
+    ) {
+        List<String> validationMessages = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                    .toList();
+
+        warn(log, "Validation error(s): {}", validationMessages);
+        return ResponseEntity.badRequest().body(new ApiErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            "One or more fields are invalid",
+            validationMessages,
+            Instant.now().toString(),
+            request.getRequestURI()
+            )
+        );
     }
 }
