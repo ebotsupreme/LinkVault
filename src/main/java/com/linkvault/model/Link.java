@@ -24,7 +24,7 @@ public class Link {
     private String url;
     private String title;
     private String description;
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
     public Link(String url, String title, String description, User user) {
         this.url = url;
@@ -34,7 +34,12 @@ public class Link {
     }
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     @JsonBackReference
     private User user;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }
