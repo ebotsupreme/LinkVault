@@ -7,11 +7,15 @@ import com.linkvault.model.Link;
 import com.linkvault.model.User;
 import com.linkvault.repository.LinkRepository;
 import com.linkvault.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
+import static com.linkvault.util.LogUtils.*;
+
+@Slf4j
 @Service
 public class LinkServiceImpl implements LinkService{
     private final LinkRepository linkRepository;
@@ -23,24 +27,35 @@ public class LinkServiceImpl implements LinkService{
     }
 
     public List<LinkDto> getAllLinksForUser(Long userId) {
+        info(log, "Fetching links for user ID: {}", userId);
         List<Link> links = linkRepository.findByUserId(userId);
+        info(log, "Found {} links for user ID: {}", links.size(), userId);
+
         return links.stream()
             .map(link -> LinkMapper.toDto(link, userId)).toList();
     }
 
     public Optional<LinkDto> getLinkById(Long linkId) {
-       Link link = linkRepository.findById(linkId)
+        info(log,"Fetching link by ID: {}", linkId);
+        Link link = linkRepository.findById(linkId)
            .orElseThrow(() -> new LinkNotFoundException(linkId));
+        info(log, "Found link by ID: {}", linkId);
+
        return Optional.of(LinkMapper.toDto(link, link.getUser().getId()));
     }
 
     public Optional<LinkDto> createLink(Long userId, LinkDto linkDto) {
+        info(log, "Fetching user by ID: {}", userId);
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
         Link link = new Link(linkDto.url(), linkDto.title(), linkDto.description(), user);
 
         try {
+            info(log, "Saving link for user ID: {}", userId);
+            debug(log, "Link to be saved: {}", link);
+
             Link savedLink = linkRepository.save(link);
+            info(log, "Link saved successfully: ID {}", savedLink.getId());
             return Optional.of(LinkMapper.toDto(savedLink, link.getUser().getId()));
         } catch (RuntimeException e) {
             throw new LinkSaveException(linkDto, e);
@@ -48,10 +63,15 @@ public class LinkServiceImpl implements LinkService{
     }
 
     public Optional<LinkDto> updateLink(Long linkId, LinkDto linkDto) {
+        info(log, "Fetching user by ID: {}", linkDto.userId());
         User user = userRepository.findById(linkDto.userId())
             .orElseThrow(() -> new UserNotFoundException(linkDto.userId()));
+
         Link existingLink = linkRepository.findById(linkId)
             .orElseThrow(() -> new LinkNotFoundException(linkId));
+        info(log, "Found link by ID: {}", linkId);
+
+        debug(log, "Received LinkDto for update: {}", linkDto);
         existingLink.setUrl(linkDto.url());
         existingLink.setTitle(linkDto.title());
         existingLink.setDescription(linkDto.description());
@@ -64,7 +84,11 @@ public class LinkServiceImpl implements LinkService{
         }
 
         try {
+            info(log, "Updating link by ID: {}", existingLink.getId());
+            debug(log, "Link to be updated: {}", existingLink);
+
             Link updatedLink = linkRepository.save(existingLink);
+            info(log, "Link updated successfully: ID {}", existingLink.getId());
             return Optional.of(LinkMapper.toDto(updatedLink, existingLink.getUser().getId()));
         } catch (RuntimeException e) {
             throw new LinkSaveException(linkDto, e);
@@ -74,6 +98,9 @@ public class LinkServiceImpl implements LinkService{
     public void deleteLink(Long linkId) {
         Link linkToDelete = linkRepository.findById(linkId)
             .orElseThrow(() -> new LinkNotFoundException(linkId));
+        info(log, "Found link by ID: {}", linkId);
+
+        info(log, "Fetching user by ID: {}", linkToDelete.getUser().getId());
         User user = userRepository.findById(linkToDelete.getUser().getId())
             .orElseThrow(() -> new UserNotFoundException(linkToDelete.getUser().getId()));
         LinkDto linkToDeleteDto = new LinkDto(
@@ -87,13 +114,18 @@ public class LinkServiceImpl implements LinkService{
         }
 
         try {
+            info(log, "Deleting link ID: {}", linkId);
+            debug(log, "Link to be deleted: {}", linkToDelete);
+
             linkRepository.deleteById(linkId);
+            info(log, "Successfully deleted link for user ID: {}", user.getId());
         } catch (RuntimeException e) {
             throw new LinkDeleteException(linkToDeleteDto, e);
         }
     }
 
     public void deleteAllLinksByUser(Long userId) {
+        info(log, "Fetching links for user ID: {}", userId);
         List<Link> links = linkRepository.findByUserId(userId);
 
         if (links.isEmpty()) {
@@ -101,7 +133,10 @@ public class LinkServiceImpl implements LinkService{
         }
 
         try {
+            debug(log, "Number of links to be deleted: {}", links.size());
+
             linkRepository.deleteAll(links);
+            info(log, "Successfully deleted all links for user ID: {}", userId);
         } catch (RuntimeException e) {
             throw new LinksDeleteException(userId, e);
         }
