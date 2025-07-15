@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -214,4 +215,172 @@ public class LinkControllerTest {
                 String.format(ExceptionMessages.LINKS_DELETE_FAILED, user.getId())
             ));
     }
+
+    @Test
+    void shouldReturnBadRequestWhenUserIdIsNull() throws Exception {
+        String invalidJson = """
+            {
+                "userId": null,
+                "url": "https://valid.com",
+                "title": "Valid title",
+                "description": "Valid description."
+            }
+        """;
+
+        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors").exists())
+            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("userId"))))
+            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
+            .andExpect(jsonPath("$.status").value(400));;
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenUrlIsEmpty() throws Exception {
+        String invalidJson = """
+            {
+                "userId": 1,
+                "url": "",
+                "title": "Valid title",
+                "description": "Valid description"
+            }
+            """;
+
+        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors").exists())
+            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("url"))))
+            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
+            .andExpect(jsonPath("$.status").value(400));;
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenUrlIsTooLong() throws Exception {
+        String tooLongUrl = "a".repeat(265);
+        String invalidJson = String.format("""
+            {
+                "userId": 1,
+                "url": "https://%s.com",
+                "title": "Valid title",
+                "description": "Valid description"
+            }
+            """, tooLongUrl);
+
+        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors").exists())
+            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("url"))))
+            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
+            .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenTitleIsTooLong() throws Exception {
+        String tooLongTitle = "a".repeat(150);
+        String invalidJson = String.format("""
+            {
+                "userId": 1,
+                "url": "https://valid.com",
+                "title": "%s",
+                "description": "Valid description"
+            }
+            """, tooLongTitle);
+
+        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors").exists())
+            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("title"))))
+            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
+            .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenUrlIsInvalidFormat() throws Exception {
+        String invalidJson = """
+            {
+                "userId": 1,
+                "url": "not-a-url-at-all",
+                "title": "Valid title",
+                "description": "Valid description"
+            }
+            """;
+
+        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .characterEncoding("UTF-8")
+                .content(invalidJson))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors").exists())
+            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("url"))))
+            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
+            .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenDescriptionIsTooLong() throws Exception {
+        String tooLongDescription = "a".repeat(265);
+        String invalidJson = String.format("""
+            {
+                "userId": 1,
+                "url": "https://valid.com",
+                "title": "Valid title",
+                "description": "%s"
+            }
+            """, tooLongDescription);
+
+        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors").exists())
+            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("description"))))
+            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
+            .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenFieldsAreMissing() throws Exception {
+        String invalidJson = "{}";
+
+        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors").exists())
+            .andExpect(jsonPath("$.errors").isArray())
+            .andExpect(jsonPath("$.errors", hasSize(greaterThan(0))))
+            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
+            .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenUserIdIsMissing() throws Exception {
+        String invalidJson = """
+            {
+                "url": "https://valid.com",
+                "title": "Valid title",
+                "description": "Valid description"
+            }
+            """;
+
+        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(invalidJson))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors").exists())
+            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("userId"))))
+            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
+            .andExpect(jsonPath("$.status").value(400));
+    }
+
+    // DELETE shouldReturnBadRequestWhenLinkIdIsZero
+    // GET shouldReturnBadRequestWhenUserIdIsNegative
 }
