@@ -10,6 +10,8 @@ import com.linkvault.service.LinkService;
 import com.linkvault.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -17,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import java.util.List;
 import java.util.Optional;
@@ -216,8 +219,10 @@ public class LinkControllerTest {
             ));
     }
 
-    @Test
-    void shouldReturnBadRequestWhenUserIdIsNull() throws Exception {
+    // Input validation tests TODO: Abstract class
+    @ParameterizedTest
+    @ValueSource(strings = {"POST", "PUT"})
+    void shouldReturnBadRequestWhenUserIdIsNull(String method) throws Exception {
         String invalidJson = """
             {
                 "userId": null,
@@ -227,18 +232,28 @@ public class LinkControllerTest {
             }
         """;
 
-        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
+            .replace("{linkId}", linkDto1.id().toString());
+
+        MockHttpServletRequestBuilder requestBuilder = switch(method) {
+            case "POST" -> post(LinkEndpoints.BASE_LINKS);
+            case "PUT" -> put(linkDtoIdPath);
+            default -> throw new IllegalArgumentException("Invalid method");
+        };
+
+        mockMvc.perform(requestBuilder
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidJson))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.errors").exists())
             .andExpect(jsonPath("$.errors[*]", hasItem(containsString("userId"))))
             .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
-            .andExpect(jsonPath("$.status").value(400));;
+            .andExpect(jsonPath("$.status").value(400));
     }
 
-    @Test
-    void shouldReturnBadRequestWhenUrlIsEmpty() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"POST", "PUT"})
+    void shouldReturnBadRequestWhenUrlIsEmpty(String method) throws Exception {
         String invalidJson = """
             {
                 "userId": 1,
@@ -248,18 +263,28 @@ public class LinkControllerTest {
             }
             """;
 
-        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
+            .replace("{linkId}", linkDto1.id().toString());
+
+        MockHttpServletRequestBuilder requestBuilder = switch(method) {
+            case "POST" -> post(LinkEndpoints.BASE_LINKS);
+            case "PUT" -> put(linkDtoIdPath);
+            default -> throw new IllegalArgumentException("Invalid method");
+        };
+
+        mockMvc.perform(requestBuilder
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidJson))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.errors").exists())
             .andExpect(jsonPath("$.errors[*]", hasItem(containsString("url"))))
             .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
-            .andExpect(jsonPath("$.status").value(400));;
+            .andExpect(jsonPath("$.status").value(400));
     }
 
-    @Test
-    void shouldReturnBadRequestWhenUrlIsTooLong() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"POST", "PUT"})
+    void shouldReturnBadRequestWhenUrlIsTooLong(String method) throws Exception {
         String tooLongUrl = "a".repeat(265);
         String invalidJson = String.format("""
             {
@@ -270,7 +295,16 @@ public class LinkControllerTest {
             }
             """, tooLongUrl);
 
-        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
+            .replace("{linkId}", linkDto1.id().toString());
+
+        MockHttpServletRequestBuilder requestBuilder = switch(method) {
+            case "POST" -> post(LinkEndpoints.BASE_LINKS);
+            case "PUT" -> put(linkDtoIdPath);
+            default -> throw new IllegalArgumentException("Invalid method");
+        };
+
+        mockMvc.perform(requestBuilder
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidJson))
             .andExpect(status().isBadRequest())
@@ -280,8 +314,9 @@ public class LinkControllerTest {
             .andExpect(jsonPath("$.status").value(400));
     }
 
-    @Test
-    void shouldReturnBadRequestWhenTitleIsTooLong() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"POST", "PUT"})
+    void shouldReturnBadRequestWhenTitleIsTooLong(String method) throws Exception {
         String tooLongTitle = "a".repeat(150);
         String invalidJson = String.format("""
             {
@@ -292,7 +327,16 @@ public class LinkControllerTest {
             }
             """, tooLongTitle);
 
-        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
+            .replace("{linkId}", linkDto1.id().toString());
+
+        MockHttpServletRequestBuilder requestBuilder = switch(method) {
+            case "POST" -> post(LinkEndpoints.BASE_LINKS);
+            case "PUT" -> put(linkDtoIdPath);
+            default -> throw new IllegalArgumentException("Invalid method");
+        };
+
+        mockMvc.perform(requestBuilder
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidJson))
             .andExpect(status().isBadRequest())
@@ -302,8 +346,9 @@ public class LinkControllerTest {
             .andExpect(jsonPath("$.status").value(400));
     }
 
-    @Test
-    void shouldReturnBadRequestWhenUrlIsInvalidFormat() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"POST", "PUT"})
+    void shouldReturnBadRequestWhenUrlIsInvalidFormat(String method) throws Exception {
         String invalidJson = """
             {
                 "userId": 1,
@@ -313,7 +358,16 @@ public class LinkControllerTest {
             }
             """;
 
-        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
+            .replace("{linkId}", linkDto1.id().toString());
+
+        MockHttpServletRequestBuilder requestBuilder = switch(method) {
+            case "POST" -> post(LinkEndpoints.BASE_LINKS);
+            case "PUT" -> put(linkDtoIdPath);
+            default -> throw new IllegalArgumentException("Invalid method");
+        };
+
+        mockMvc.perform(requestBuilder
                 .contentType(MediaType.APPLICATION_JSON)
                 .characterEncoding("UTF-8")
                 .content(invalidJson))
@@ -324,8 +378,9 @@ public class LinkControllerTest {
             .andExpect(jsonPath("$.status").value(400));
     }
 
-    @Test
-    void shouldReturnBadRequestWhenDescriptionIsTooLong() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"POST", "PUT"})
+    void shouldReturnBadRequestWhenDescriptionIsTooLong(String method) throws Exception {
         String tooLongDescription = "a".repeat(265);
         String invalidJson = String.format("""
             {
@@ -336,7 +391,16 @@ public class LinkControllerTest {
             }
             """, tooLongDescription);
 
-        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
+            .replace("{linkId}", linkDto1.id().toString());
+
+        MockHttpServletRequestBuilder requestBuilder = switch(method) {
+            case "POST" -> post(LinkEndpoints.BASE_LINKS);
+            case "PUT" -> put(linkDtoIdPath);
+            default -> throw new IllegalArgumentException("Invalid method");
+        };
+
+        mockMvc.perform(requestBuilder
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidJson))
             .andExpect(status().isBadRequest())
@@ -346,11 +410,21 @@ public class LinkControllerTest {
             .andExpect(jsonPath("$.status").value(400));
     }
 
-    @Test
-    void shouldReturnBadRequestWhenFieldsAreMissing() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"POST", "PUT"})
+    void shouldReturnBadRequestWhenFieldsAreMissing(String method) throws Exception {
         String invalidJson = "{}";
 
-        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
+            .replace("{linkId}", linkDto1.id().toString());
+
+        MockHttpServletRequestBuilder requestBuilder = switch(method) {
+            case "POST" -> post(LinkEndpoints.BASE_LINKS);
+            case "PUT" -> put(linkDtoIdPath);
+            default -> throw new IllegalArgumentException("Invalid method");
+        };
+
+        mockMvc.perform(requestBuilder
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidJson))
             .andExpect(status().isBadRequest())
@@ -361,8 +435,9 @@ public class LinkControllerTest {
             .andExpect(jsonPath("$.status").value(400));
     }
 
-    @Test
-    void shouldReturnBadRequestWhenUserIdIsMissing() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"POST", "PUT"})
+    void shouldReturnBadRequestWhenUserIdIsMissing(String method) throws Exception {
         String invalidJson = """
             {
                 "url": "https://valid.com",
@@ -371,7 +446,16 @@ public class LinkControllerTest {
             }
             """;
 
-        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
+            .replace("{linkId}", linkDto1.id().toString());
+
+        MockHttpServletRequestBuilder requestBuilder = switch(method) {
+            case "POST" -> post(LinkEndpoints.BASE_LINKS);
+            case "PUT" -> put(linkDtoIdPath);
+            default -> throw new IllegalArgumentException("Invalid method");
+        };
+
+        mockMvc.perform(requestBuilder
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidJson))
             .andExpect(status().isBadRequest())
