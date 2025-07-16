@@ -244,11 +244,8 @@ public class LinkControllerTest extends AbstractValidationTest {
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
 
-        MockHttpServletRequestBuilder requestBuilder = switch(method) {
-            case "POST" -> post(LinkEndpoints.BASE_LINKS);
-            case "PUT" -> put(linkDtoIdPath);
-            default -> throw new IllegalArgumentException("Invalid method");
-        };
+        MockHttpServletRequestBuilder requestBuilder =
+            buildSimpleRequest(method, linkDtoIdPath);
 
         ResultActions result = performJsonRequest(requestBuilder, invalidJson);
         assertValidationFailure(result, "userId");
@@ -269,20 +266,11 @@ public class LinkControllerTest extends AbstractValidationTest {
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
 
-        MockHttpServletRequestBuilder requestBuilder = switch(method) {
-            case "POST" -> post(LinkEndpoints.BASE_LINKS);
-            case "PUT" -> put(linkDtoIdPath);
-            default -> throw new IllegalArgumentException("Invalid method");
-        };
+        MockHttpServletRequestBuilder requestBuilder =
+            buildSimpleRequest(method, linkDtoIdPath);
 
-        mockMvc.perform(requestBuilder
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.errors").exists())
-            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("url"))))
-            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
-            .andExpect(jsonPath("$.status").value(400));
+        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+        assertValidationFailure(result, "url");
     }
 
     @ParameterizedTest
@@ -301,20 +289,11 @@ public class LinkControllerTest extends AbstractValidationTest {
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
 
-        MockHttpServletRequestBuilder requestBuilder = switch(method) {
-            case "POST" -> post(LinkEndpoints.BASE_LINKS);
-            case "PUT" -> put(linkDtoIdPath);
-            default -> throw new IllegalArgumentException("Invalid method");
-        };
+        MockHttpServletRequestBuilder requestBuilder =
+            buildSimpleRequest(method, linkDtoIdPath);
 
-        mockMvc.perform(requestBuilder
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.errors").exists())
-            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("url"))))
-            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
-            .andExpect(jsonPath("$.status").value(400));
+        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+        assertValidationFailure(result, "url");
     }
 
     @ParameterizedTest
@@ -333,20 +312,11 @@ public class LinkControllerTest extends AbstractValidationTest {
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
 
-        MockHttpServletRequestBuilder requestBuilder = switch(method) {
-            case "POST" -> post(LinkEndpoints.BASE_LINKS);
-            case "PUT" -> put(linkDtoIdPath);
-            default -> throw new IllegalArgumentException("Invalid method");
-        };
+        MockHttpServletRequestBuilder requestBuilder =
+            buildSimpleRequest(method, linkDtoIdPath);
 
-        mockMvc.perform(requestBuilder
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.errors").exists())
-            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("title"))))
-            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
-            .andExpect(jsonPath("$.status").value(400));
+        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+        assertValidationFailure(result, "title");
     }
 
     @ParameterizedTest
@@ -364,21 +334,11 @@ public class LinkControllerTest extends AbstractValidationTest {
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
 
-        MockHttpServletRequestBuilder requestBuilder = switch(method) {
-            case "POST" -> post(LinkEndpoints.BASE_LINKS);
-            case "PUT" -> put(linkDtoIdPath);
-            default -> throw new IllegalArgumentException("Invalid method");
-        };
+        MockHttpServletRequestBuilder requestBuilder =
+            buildSimpleRequest(method, linkDtoIdPath);
 
-        mockMvc.perform(requestBuilder
-                .contentType(MediaType.APPLICATION_JSON)
-                .characterEncoding("UTF-8")
-                .content(invalidJson))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.errors").exists())
-            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("url"))))
-            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
-            .andExpect(jsonPath("$.status").value(400));
+        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+        assertValidationFailure(result, "url");
     }
 
     @ParameterizedTest
@@ -397,20 +357,11 @@ public class LinkControllerTest extends AbstractValidationTest {
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
 
-        MockHttpServletRequestBuilder requestBuilder = switch(method) {
-            case "POST" -> post(LinkEndpoints.BASE_LINKS);
-            case "PUT" -> put(linkDtoIdPath);
-            default -> throw new IllegalArgumentException("Invalid method");
-        };
+        MockHttpServletRequestBuilder requestBuilder =
+            buildSimpleRequest(method, linkDtoIdPath);
 
-        mockMvc.perform(requestBuilder
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.errors").exists())
-            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("description"))))
-            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
-            .andExpect(jsonPath("$.status").value(400));
+        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+        assertValidationFailure(result, "description");
     }
 
     @ParameterizedTest
@@ -421,15 +372,12 @@ public class LinkControllerTest extends AbstractValidationTest {
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
 
-        MockHttpServletRequestBuilder requestBuilder = switch(method) {
-            case "POST" -> post(LinkEndpoints.BASE_LINKS);
-            case "PUT" -> put(linkDtoIdPath);
-            default -> throw new IllegalArgumentException("Invalid method");
-        };
+        MockHttpServletRequestBuilder requestBuilder =
+            buildSimpleRequest(method, linkDtoIdPath);
 
-        mockMvc.perform(requestBuilder
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
+        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+
+        result
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.errors").exists())
             .andExpect(jsonPath("$.errors").isArray())
@@ -452,20 +400,11 @@ public class LinkControllerTest extends AbstractValidationTest {
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
 
-        MockHttpServletRequestBuilder requestBuilder = switch(method) {
-            case "POST" -> post(LinkEndpoints.BASE_LINKS);
-            case "PUT" -> put(linkDtoIdPath);
-            default -> throw new IllegalArgumentException("Invalid method");
-        };
+        MockHttpServletRequestBuilder requestBuilder =
+            buildSimpleRequest(method, linkDtoIdPath);
 
-        mockMvc.perform(requestBuilder
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.errors").exists())
-            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("userId"))))
-            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
-            .andExpect(jsonPath("$.status").value(400));
+        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+        assertValidationFailure(result, "userId");
     }
 
     @ParameterizedTest
@@ -490,13 +429,8 @@ public class LinkControllerTest extends AbstractValidationTest {
             default -> throw new IllegalArgumentException("Invalid method");
         };
 
-        mockMvc.perform(requestBuilder
-                .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.errors").exists())
-            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("linkId"))))
-            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
-            .andExpect(jsonPath("$.status").value(400));
+        ResultActions result = performJsonRequest(requestBuilder, validJson);
+        assertValidationFailure(result, "linkId");
     }
 
     @ParameterizedTest
@@ -511,12 +445,8 @@ public class LinkControllerTest extends AbstractValidationTest {
             default -> throw new IllegalArgumentException("Invalid method");
         };
 
-        mockMvc.perform(requestBuilder
-                .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.errors").exists())
-            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("userId"))))
-            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
-            .andExpect(jsonPath("$.status").value(400));
+        ResultActions result = mockMvc.perform(requestBuilder
+            .contentType(MediaType.APPLICATION_JSON));
+        assertValidationFailure(result, "userId");
     }
 }
