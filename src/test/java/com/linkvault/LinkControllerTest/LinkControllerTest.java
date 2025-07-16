@@ -465,6 +465,56 @@ public class LinkControllerTest {
             .andExpect(jsonPath("$.status").value(400));
     }
 
-    // DELETE shouldReturnBadRequestWhenLinkIdIsZero
-    // GET shouldReturnBadRequestWhenUserIdIsNegative
+    @ParameterizedTest
+    @ValueSource(strings = {"GET", "DELETE", "PUT"})
+    void shouldReturnBadRequestWhenLinkIdIsZero(String method) throws Exception {
+        String validJson = """
+            {
+                "userId": 1,
+                "url": "https://valid.com",
+                "title": "Valid title",
+                "description": "Valid description."
+            }
+        """;
+
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
+            .replace("{linkId}", "0");
+
+        MockHttpServletRequestBuilder requestBuilder = switch(method) {
+            case "GET" -> get(linkDtoIdPath);
+            case "DELETE" -> delete(linkDtoIdPath);
+            case "PUT" -> put(linkDtoIdPath).content(validJson);
+            default -> throw new IllegalArgumentException("Invalid method");
+        };
+
+        mockMvc.perform(requestBuilder
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors").exists())
+            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("linkId"))))
+            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
+            .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GET", "DELETE"})
+    void shouldReturnBadRequestWhenUserIdIsNegative(String method) throws Exception {
+
+        String linkDtoIdPath = LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_USER
+            .replace("{userId}", "-1");
+
+        MockHttpServletRequestBuilder requestBuilder = switch(method) {
+            case "GET" -> get(linkDtoIdPath);
+            case "DELETE" -> delete(linkDtoIdPath);
+            default -> throw new IllegalArgumentException("Invalid method");
+        };
+
+        mockMvc.perform(requestBuilder
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors").exists())
+            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("userId"))))
+            .andExpect(jsonPath("$.message").value("One or more fields are invalid"))
+            .andExpect(jsonPath("$.status").value(400));
+    }
 }

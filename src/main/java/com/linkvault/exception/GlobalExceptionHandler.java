@@ -1,6 +1,7 @@
 package com.linkvault.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -157,6 +158,27 @@ public class GlobalExceptionHandler {
             validationMessages,
             Instant.now().toString(),
             request.getRequestURI()
+            )
+        );
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleConstraintViolationErrors(
+        ConstraintViolationException ex, HttpServletRequest request
+    ) {
+        List<String> errors = ex.getConstraintViolations()
+            .stream()
+            .map(violation ->
+                violation.getPropertyPath() + ": " + violation.getMessage())
+            .toList();
+
+        warn(log, "Constraint violation(s): {}", errors);
+        return ResponseEntity.badRequest().body(new ApiErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "One or more fields are invalid",
+                errors,
+                Instant.now().toString(),
+                request.getRequestURI()
             )
         );
     }
