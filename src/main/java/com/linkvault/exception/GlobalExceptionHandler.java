@@ -66,8 +66,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleLinkSave(
         LinkSaveException ex, HttpServletRequest request
     ) {
-        warn(log, "Link failed to save: {}", ex.getMessage());
+        warn(log, "Link save failed: {}", ex.getMessage());
         error(log, "Stack trace: ", ex);
+
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -82,7 +83,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleLinkDelete(
         LinkDeleteException ex, HttpServletRequest request
     ) {
-        warn(log, "Link failed to delete: {}", ex.getMessage());
+        warn(log, "Link deletion failed: {}", ex.getMessage());
         error(log, "Stack trace: ", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
@@ -98,7 +99,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleLinksDelete(
         LinksDeleteException ex, HttpServletRequest request
     ) {
-        warn(log, "Failed to delete links by user ID: {}", ex.getMessage());
+        warn(log, "Link deletion failed: {}", ex.getMessage());
         error(log, "Stack trace: ", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
@@ -151,7 +152,8 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                     .toList();
 
-        warn(log, "Validation error(s): {}", validationMessages);
+        warn(log, "Validation error(s) on [{} {}]: {}",
+            request.getMethod(), request.getRequestURI() ,validationMessages);
         return ResponseEntity.badRequest().body(new ApiErrorResponse(
             HttpStatus.BAD_REQUEST.value(),
             "One or more fields are invalid",
@@ -172,7 +174,8 @@ public class GlobalExceptionHandler {
                 violation.getPropertyPath() + ": " + violation.getMessage())
             .toList();
 
-        warn(log, "Constraint violation(s): {}", errors);
+        warn(log, "Constraint violation(s): {} {}: {}",
+            request.getMethod(), request.getRequestURI(), errors);
         return ResponseEntity.badRequest().body(new ApiErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "One or more fields are invalid",
