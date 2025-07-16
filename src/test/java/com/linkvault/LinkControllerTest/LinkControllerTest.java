@@ -8,6 +8,7 @@ import com.linkvault.exception.*;
 import com.linkvault.model.User;
 import com.linkvault.service.LinkService;
 import com.linkvault.util.AbstractValidationTest;
+import com.linkvault.util.JsonBuilder;
 import com.linkvault.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -232,14 +233,12 @@ public class LinkControllerTest extends AbstractValidationTest {
     @ParameterizedTest
     @ValueSource(strings = {"POST", "PUT"})
     void shouldReturnBadRequestWhenUserIdIsNull(String method) throws Exception {
-        String invalidJson = """
-            {
-                "userId": null,
-                "url": "https://valid.com",
-                "title": "Valid title",
-                "description": "Valid description."
-            }
-        """;
+        String jsonWithNullUserId = new JsonBuilder()
+            .withUserId(null)
+            .withUrl("https://valid.com")
+            .withTitle("Valid title")
+            .withDescription("Valid description")
+            .build();
 
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
@@ -247,21 +246,19 @@ public class LinkControllerTest extends AbstractValidationTest {
         MockHttpServletRequestBuilder requestBuilder =
             buildSimpleRequest(method, linkDtoIdPath);
 
-        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+        ResultActions result = performJsonRequest(requestBuilder, jsonWithNullUserId);
         assertValidationFailure(result, "userId");
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"POST", "PUT"})
     void shouldReturnBadRequestWhenUrlIsEmpty(String method) throws Exception {
-        String invalidJson = """
-            {
-                "userId": 1,
-                "url": "",
-                "title": "Valid title",
-                "description": "Valid description"
-            }
-            """;
+        String jsonWithEmptyUrl = new JsonBuilder()
+            .withUserId(1)
+            .withUrl("")
+            .withTitle("Valid title")
+            .withDescription("Valid description")
+            .build();
 
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
@@ -269,7 +266,7 @@ public class LinkControllerTest extends AbstractValidationTest {
         MockHttpServletRequestBuilder requestBuilder =
             buildSimpleRequest(method, linkDtoIdPath);
 
-        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+        ResultActions result = performJsonRequest(requestBuilder, jsonWithEmptyUrl);
         assertValidationFailure(result, "url");
     }
 
@@ -277,14 +274,12 @@ public class LinkControllerTest extends AbstractValidationTest {
     @ValueSource(strings = {"POST", "PUT"})
     void shouldReturnBadRequestWhenUrlIsTooLong(String method) throws Exception {
         String tooLongUrl = "a".repeat(265);
-        String invalidJson = String.format("""
-            {
-                "userId": 1,
-                "url": "https://%s.com",
-                "title": "Valid title",
-                "description": "Valid description"
-            }
-            """, tooLongUrl);
+        String jsonWithTooLongUrl = String.format(new JsonBuilder()
+            .withUserId(1)
+            .withUrl("https://%s.com")
+            .withTitle("Valid title")
+            .withDescription("Valid description")
+            .build(), tooLongUrl);
 
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
@@ -292,7 +287,7 @@ public class LinkControllerTest extends AbstractValidationTest {
         MockHttpServletRequestBuilder requestBuilder =
             buildSimpleRequest(method, linkDtoIdPath);
 
-        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+        ResultActions result = performJsonRequest(requestBuilder, jsonWithTooLongUrl);
         assertValidationFailure(result, "url");
     }
 
@@ -300,14 +295,12 @@ public class LinkControllerTest extends AbstractValidationTest {
     @ValueSource(strings = {"POST", "PUT"})
     void shouldReturnBadRequestWhenTitleIsTooLong(String method) throws Exception {
         String tooLongTitle = "a".repeat(150);
-        String invalidJson = String.format("""
-            {
-                "userId": 1,
-                "url": "https://valid.com",
-                "title": "%s",
-                "description": "Valid description"
-            }
-            """, tooLongTitle);
+        String jsonWithTooLongTitle = String.format(new JsonBuilder()
+            .withUserId(1)
+            .withUrl("https://valid.com")
+            .withTitle("%s")
+            .withDescription("Valid description")
+            .build(), tooLongTitle);
 
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
@@ -315,21 +308,19 @@ public class LinkControllerTest extends AbstractValidationTest {
         MockHttpServletRequestBuilder requestBuilder =
             buildSimpleRequest(method, linkDtoIdPath);
 
-        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+        ResultActions result = performJsonRequest(requestBuilder, jsonWithTooLongTitle);
         assertValidationFailure(result, "title");
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"POST", "PUT"})
     void shouldReturnBadRequestWhenUrlIsInvalidFormat(String method) throws Exception {
-        String invalidJson = """
-            {
-                "userId": 1,
-                "url": "not-a-url-at-all",
-                "title": "Valid title",
-                "description": "Valid description"
-            }
-            """;
+        String jsonWithTooLongUrl = new JsonBuilder()
+            .withUserId(1)
+            .withUrl("not-a-url-at-all")
+            .withTitle("Valid title")
+            .withDescription("Valid description")
+            .build();
 
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
@@ -337,7 +328,7 @@ public class LinkControllerTest extends AbstractValidationTest {
         MockHttpServletRequestBuilder requestBuilder =
             buildSimpleRequest(method, linkDtoIdPath);
 
-        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+        ResultActions result = performJsonRequest(requestBuilder, jsonWithTooLongUrl);
         assertValidationFailure(result, "url");
     }
 
@@ -345,14 +336,12 @@ public class LinkControllerTest extends AbstractValidationTest {
     @ValueSource(strings = {"POST", "PUT"})
     void shouldReturnBadRequestWhenDescriptionIsTooLong(String method) throws Exception {
         String tooLongDescription = "a".repeat(265);
-        String invalidJson = String.format("""
-            {
-                "userId": 1,
-                "url": "https://valid.com",
-                "title": "Valid title",
-                "description": "%s"
-            }
-            """, tooLongDescription);
+        String jsonWithTooLongDescription = String.format(new JsonBuilder()
+            .withUserId(1)
+            .withUrl("https://valid.com")
+            .withTitle("Valid title")
+            .withDescription("%s")
+            .build(), tooLongDescription);
 
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
@@ -360,7 +349,7 @@ public class LinkControllerTest extends AbstractValidationTest {
         MockHttpServletRequestBuilder requestBuilder =
             buildSimpleRequest(method, linkDtoIdPath);
 
-        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+        ResultActions result = performJsonRequest(requestBuilder, jsonWithTooLongDescription);
         assertValidationFailure(result, "description");
     }
 
@@ -389,13 +378,12 @@ public class LinkControllerTest extends AbstractValidationTest {
     @ParameterizedTest
     @ValueSource(strings = {"POST", "PUT"})
     void shouldReturnBadRequestWhenUserIdIsMissing(String method) throws Exception {
-        String invalidJson = """
-            {
-                "url": "https://valid.com",
-                "title": "Valid title",
-                "description": "Valid description"
-            }
-            """;
+        String jsonWithOutUserField = new JsonBuilder()
+            .withoutField("userId")
+            .withUrl("https://valid.com")
+            .withTitle("Valid title")
+            .withDescription("Valid description")
+            .build();
 
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", linkDto1.id());
@@ -403,21 +391,19 @@ public class LinkControllerTest extends AbstractValidationTest {
         MockHttpServletRequestBuilder requestBuilder =
             buildSimpleRequest(method, linkDtoIdPath);
 
-        ResultActions result = performJsonRequest(requestBuilder, invalidJson);
+        ResultActions result = performJsonRequest(requestBuilder, jsonWithOutUserField);
         assertValidationFailure(result, "userId");
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"GET", "DELETE", "PUT"})
     void shouldReturnBadRequestWhenLinkIdIsZero(String method) throws Exception {
-        String validJson = """
-            {
-                "userId": 1,
-                "url": "https://valid.com",
-                "title": "Valid title",
-                "description": "Valid description."
-            }
-        """;
+        String jsonValid = new JsonBuilder()
+            .withUserId(1)
+            .withUrl("https://valid.com")
+            .withTitle("Valid title")
+            .withDescription("Valid description")
+            .build();
 
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId("{linkId}", 0L);
@@ -425,11 +411,11 @@ public class LinkControllerTest extends AbstractValidationTest {
         MockHttpServletRequestBuilder requestBuilder = switch(method) {
             case "GET" -> get(linkDtoIdPath);
             case "DELETE" -> delete(linkDtoIdPath);
-            case "PUT" -> put(linkDtoIdPath).content(validJson);
+            case "PUT" -> put(linkDtoIdPath).content(jsonValid);
             default -> throw new IllegalArgumentException("Invalid method");
         };
 
-        ResultActions result = performJsonRequest(requestBuilder, validJson);
+        ResultActions result = performJsonRequest(requestBuilder, jsonValid);
         assertValidationFailure(result, "linkId");
     }
 
