@@ -10,6 +10,7 @@ import com.linkvault.repository.UserRepository;
 import com.linkvault.util.LogMessages;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +28,7 @@ public class LinkServiceImpl implements LinkService{
         this.userRepository = userRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<LinkDto> getAllLinksForUser(Long userId) {
         info(log, LogMessages.FETCH_LINKS_FOR_USER, userId);
         List<Link> links = linkRepository.findByUserId(userId);
@@ -36,6 +38,7 @@ public class LinkServiceImpl implements LinkService{
             .map(link -> LinkMapper.toDto(link, userId)).toList();
     }
 
+    @Transactional(readOnly = true)
     public Optional<LinkDto> getLinkById(Long linkId) {
         info(log,"Fetching link by ID: {}", linkId);
         Link link = linkRepository.findById(linkId)
@@ -45,6 +48,7 @@ public class LinkServiceImpl implements LinkService{
        return Optional.of(LinkMapper.toDto(link, link.getUser().getId()));
     }
 
+    @Transactional
     public Optional<LinkDto> createLink(Long userId, LinkDto linkDto) {
         info(log, LogMessages.FETCH_USER, userId);
         User user = userRepository.findById(userId)
@@ -63,6 +67,7 @@ public class LinkServiceImpl implements LinkService{
         }
     }
 
+    @Transactional
     public Optional<LinkDto> updateLink(Long linkId, LinkDto linkDto) {
         info(log, LogMessages.FETCH_USER, linkDto.userId());
         User user = userRepository.findById(linkDto.userId())
@@ -96,6 +101,7 @@ public class LinkServiceImpl implements LinkService{
         }
     }
 
+    @Transactional
     public void deleteLink(Long linkId) {
         Link linkToDelete = linkRepository.findById(linkId)
             .orElseThrow(() -> new LinkNotFoundException(linkId));
@@ -125,6 +131,7 @@ public class LinkServiceImpl implements LinkService{
         }
     }
 
+    @Transactional
     public void deleteAllLinksByUser(Long userId) {
         info(log, LogMessages.FETCH_LINKS_FOR_USER, userId);
         List<Link> links = linkRepository.findByUserId(userId);
