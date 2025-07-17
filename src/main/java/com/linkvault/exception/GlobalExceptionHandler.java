@@ -157,7 +157,7 @@ public class GlobalExceptionHandler {
             request.getMethod(), request.getRequestURI() ,validationMessages);
         return ResponseEntity.badRequest().body(new ApiErrorResponse(
             HttpStatus.BAD_REQUEST.value(),
-            "One or more fields are invalid",
+            ExceptionMessages.INVALID_FIELDS,
             validationMessages,
             Instant.now().toString(),
             request.getRequestURI()
@@ -179,7 +179,7 @@ public class GlobalExceptionHandler {
             request.getMethod(), request.getRequestURI(), errors);
         return ResponseEntity.badRequest().body(new ApiErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "One or more fields are invalid",
+                ExceptionMessages.INVALID_FIELDS,
                 errors,
                 Instant.now().toString(),
                 request.getRequestURI()

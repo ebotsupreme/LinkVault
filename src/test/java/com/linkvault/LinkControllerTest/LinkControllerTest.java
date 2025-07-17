@@ -373,7 +373,7 @@ public class LinkControllerTest extends AbstractValidationTest {
             .andExpect(jsonPath("$.errors").isArray())
             .andExpect(jsonPath("$.errors", hasSize(greaterThan(0))))
             .andExpect(jsonPath("$.message").value(
-                "One or more fields are invalid"))
+                ExceptionMessages.INVALID_FIELDS))
             .andExpect(jsonPath("$.status").value(400));
     }
 
