@@ -1,5 +1,6 @@
 package com.linkvault.exception;
 
+import com.linkvault.util.LogMessages;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +68,7 @@ public class GlobalExceptionHandler {
         LinkSaveException ex, HttpServletRequest request
     ) {
         warn(log, "Link save failed: {}", ex.getMessage());
-        error(log, "Stack trace: ", ex);
+        error(log, LogMessages.STACK_TRACE, ex);
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
@@ -83,8 +84,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleLinkDelete(
         LinkDeleteException ex, HttpServletRequest request
     ) {
-        warn(log, "Link deletion failed: {}", ex.getMessage());
-        error(log, "Stack trace: ", ex);
+        warn(log, LogMessages.DELETE_LINK_FAILED, ex.getMessage());
+        error(log, LogMessages.STACK_TRACE, ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -99,8 +100,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleLinksDelete(
         LinksDeleteException ex, HttpServletRequest request
     ) {
-        warn(log, "Link deletion failed: {}", ex.getMessage());
-        error(log, "Stack trace: ", ex);
+        warn(log, LogMessages.DELETE_LINK_FAILED, ex.getMessage());
+        error(log, LogMessages.STACK_TRACE, ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -116,7 +117,7 @@ public class GlobalExceptionHandler {
         Exception ex, HttpServletRequest request
     ) {
         warn(log, "Unhandled exception occurred: {}", ex.getMessage());
-        error(log, "Stack trace:", ex);
+        error(log, LogMessages.STACK_TRACE, ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
