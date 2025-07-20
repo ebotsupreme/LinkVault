@@ -1,15 +1,19 @@
 package com.linkvault.exception;
 
+import com.linkvault.util.LogMessages;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.time.Instant;
 
 import static com.linkvault.util.LogUtils.*;
+import java.util.List;
 
 @Slf4j
 @ControllerAdvice
@@ -23,6 +27,7 @@ public class GlobalExceptionHandler {
             .body(new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -37,6 +42,7 @@ public class GlobalExceptionHandler {
             .body(new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -51,6 +57,7 @@ public class GlobalExceptionHandler {
             .body(new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -60,12 +67,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleLinkSave(
         LinkSaveException ex, HttpServletRequest request
     ) {
-        warn(log, "Link failed to save: {}", ex.getMessage());
-        error(log, "Stack trace: ", ex);
+        warn(log, "Link save failed: {}", ex.getMessage());
+        error(log, LogMessages.STACK_TRACE, ex);
+
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -75,12 +84,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleLinkDelete(
         LinkDeleteException ex, HttpServletRequest request
     ) {
-        warn(log, "Link failed to delete: {}", ex.getMessage());
-        error(log, "Stack trace: ", ex);
+        warn(log, LogMessages.DELETE_LINK_FAILED, ex.getMessage());
+        error(log, LogMessages.STACK_TRACE, ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -90,12 +100,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleLinksDelete(
         LinksDeleteException ex, HttpServletRequest request
     ) {
-        warn(log, "Failed to delete links by user ID: {}", ex.getMessage());
-        error(log, "Stack trace: ", ex);
+        warn(log, LogMessages.DELETE_LINK_FAILED, ex.getMessage());
+        error(log, LogMessages.STACK_TRACE, ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -106,11 +117,12 @@ public class GlobalExceptionHandler {
         Exception ex, HttpServletRequest request
     ) {
         warn(log, "Unhandled exception occurred: {}", ex.getMessage());
-        error(log, "Stack trace:", ex);
+        error(log, LogMessages.STACK_TRACE, ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 ex.getMessage(),
+                null,
                 Instant.now().toString(),
                 request.getRequestURI()
             ));
@@ -125,8 +137,53 @@ public class GlobalExceptionHandler {
            .body(new ApiErrorResponse(
                HttpStatus.FORBIDDEN.value(),
                ex.getMessage(),
+               null,
                Instant.now().toString(),
                request.getRequestURI()
            ));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponse> handleValidationErrors(
+        MethodArgumentNotValidException ex, HttpServletRequest request
+    ) {
+        List<String> validationMessages = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                    .toList();
+
+        warn(log, "Validation error(s) on [{} {}]: {}",
+            request.getMethod(), request.getRequestURI() ,validationMessages);
+        return ResponseEntity.badRequest().body(new ApiErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            ExceptionMessages.INVALID_FIELDS,
+            validationMessages,
+            Instant.now().toString(),
+            request.getRequestURI()
+            )
+        );
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleConstraintViolationErrors(
+        ConstraintViolationException ex, HttpServletRequest request
+    ) {
+        List<String> errors = ex.getConstraintViolations()
+            .stream()
+            .map(violation ->
+                violation.getPropertyPath() + ": " + violation.getMessage())
+            .toList();
+
+        warn(log, "Constraint violation(s): {} {}: {}",
+            request.getMethod(), request.getRequestURI(), errors);
+        return ResponseEntity.badRequest().body(new ApiErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                ExceptionMessages.INVALID_FIELDS,
+                errors,
+                Instant.now().toString(),
+                request.getRequestURI()
+            )
+        );
     }
 }
