@@ -4,6 +4,9 @@ import com.linkvault.constants.apiPaths.AuthEndpoints;
 import com.linkvault.dto.LoginRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,9 +20,20 @@ import static com.linkvault.util.LogUtils.info;
 @RestController
 @RequestMapping(AuthEndpoints.BASE_AUTH)
 public class AuthController {
+    private final AuthenticationManager authenticationManager;
+
+    public AuthController(AuthenticationManager authenticationManager) {
+        this.authenticationManager = authenticationManager;
+    }
 
     @PostMapping(AuthEndpoints.LOGIN)
     public void login(@Valid @RequestBody LoginRequest loginRequest) {
         info(log, "Logging in user: {}", loginRequest.getUsername());
+        Authentication authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(
+                loginRequest.getUsername(),
+                loginRequest.getPassword()
+            )
+        );
     }
 }
