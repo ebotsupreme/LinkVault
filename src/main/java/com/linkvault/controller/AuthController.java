@@ -3,6 +3,7 @@ package com.linkvault.controller;
 import com.linkvault.constants.apiPaths.AuthEndpoints;
 import com.linkvault.dto.AuthResponse;
 import com.linkvault.dto.LoginRequest;
+import com.linkvault.util.JwtUtils;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -25,9 +26,11 @@ import static com.linkvault.util.LogUtils.info;
 @RequestMapping(AuthEndpoints.BASE_AUTH)
 public class AuthController {
     private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
 
-    public AuthController(AuthenticationManager authenticationManager) {
+    public AuthController(AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
         this.authenticationManager = authenticationManager;
+        this.jwtUtils = jwtUtils;
     }
 
     @PostMapping(AuthEndpoints.LOGIN)
@@ -41,13 +44,12 @@ public class AuthController {
                 )
             );
 
-            String token = "dummy-token";
+            String token = jwtUtils.generateToken(loginRequest.getUsername());
 
             info(log, "Login successful for user: {}", loginRequest.getUsername());
             return ResponseEntity.ok(new AuthResponse(token));
         } catch (AuthenticationException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
         }
-
     }
 }
