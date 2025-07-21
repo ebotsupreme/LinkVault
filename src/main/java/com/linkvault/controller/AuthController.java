@@ -1,6 +1,7 @@
 package com.linkvault.controller;
 
 import com.linkvault.constants.apiPaths.AuthEndpoints;
+import com.linkvault.dto.AuthResponse;
 import com.linkvault.dto.LoginRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -40,8 +41,10 @@ public class AuthController {
                 )
             );
 
+            String token = "dummy-token";
+
             info(log, "Login successful for user: {}", loginRequest.getUsername());
-            return ResponseEntity.ok("Login successful");
+            return ResponseEntity.ok(new AuthResponse(token));
         } catch (AuthenticationException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
         }
