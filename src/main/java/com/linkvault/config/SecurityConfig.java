@@ -1,7 +1,7 @@
 package com.linkvault.config;
 
-import com.linkvault.util.JwtAuthenticationFilter;
-import com.linkvault.util.JwtUtils;
+import com.linkvault.security.JwtAuthenticationFilter;
+import com.linkvault.security.JwtUtils;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -55,7 +55,11 @@ public class SecurityConfig {
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exception ->
-                exception.authenticationEntryPoint((request, response, authException) ->
+                exception.authenticationEntryPoint(
+                    (request,
+                     response,
+                     authException
+                    ) ->
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()

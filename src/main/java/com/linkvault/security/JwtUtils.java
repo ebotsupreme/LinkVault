@@ -1,4 +1,4 @@
-package com.linkvault.util;
+package com.linkvault.security;
 
 
 import org.springframework.beans.factory.annotation.Value;

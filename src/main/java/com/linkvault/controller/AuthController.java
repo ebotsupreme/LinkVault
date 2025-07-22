@@ -3,7 +3,7 @@ package com.linkvault.controller;
 import com.linkvault.constants.apiPaths.AuthEndpoints;
 import com.linkvault.dto.AuthResponse;
 import com.linkvault.dto.LoginRequest;
-import com.linkvault.util.JwtUtils;
+import com.linkvault.security.JwtUtils;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
