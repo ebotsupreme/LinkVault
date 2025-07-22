@@ -1,8 +1,11 @@
 package com.linkvault.util;
 
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
 import javax.crypto.SecretKey;
 
@@ -11,14 +14,20 @@ import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtUtils {
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 10; // 10 hours
-    private static final String SECRET = "mysupersecretkeythatshouldbeatleast256bitslong!";
+    private final long expirationTime;
+    private final SecretKey key;
 
-    private final SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes());
+    public JwtUtils(
+        @Value("${jwt.secret}") String secret,
+        @Value("${jwt.expiration}") long expirationTime
+    ) {
+        this.key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(secret));
+        this.expirationTime = expirationTime;
+    }
 
     public String generateToken(String username) {
         Date now = new Date();
-        Date expiryDate = new Date(System.currentTimeMillis() + EXPIRATION_TIME);
+        Date expiryDate = new Date(System.currentTimeMillis() + expirationTime);
         JwtBuilder builder = Jwts.builder()
             .claim("sub", username)
             .issuedAt(now)
