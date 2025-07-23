@@ -8,6 +8,7 @@ import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -34,6 +35,9 @@ public class AuthIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
     private static final String username = "user";
+    @Value("${jwt.secret}")
+    private String jwtSecret;
+
 
     @BeforeEach
     void setUp() {
@@ -82,23 +86,36 @@ public class AuthIntegrationTest {
             .andExpect(status().isUnauthorized());
     }
 
-    private String generateTokenWithDifferentSecret() {
-        SecretKey otherKey = Keys.hmacShaKeyFor("invalid-secret-key-12345678901234567890".getBytes());
-        Date now = new Date();
-        Date expiryDate = new Date(System.currentTimeMillis() + 1000 * 60 * 10);
-
+    private String generateToken(SecretKey key, Date now, Date expiryDate) {
         JwtBuilder builder = Jwts.builder()
             .claim("sub", AuthIntegrationTest.username)
             .issuedAt((now))
             .expiration(expiryDate)
-            .signWith(otherKey);
+            .signWith(key);
 
         return builder.compact();
     }
 
     @Test
     void shouldReturn401_WhenTokenHasInvalidSignature() throws Exception {
-        String token = generateTokenWithDifferentSecret();
+        SecretKey otherKey = Keys.hmacShaKeyFor("invalid-secret-key-12345678901234567890".getBytes());
+        Date now = new Date();
+        Date expiryDate = new Date(System.currentTimeMillis() + 1000 * 60 * 10);
+
+        String token = generateToken(otherKey, now, expiryDate);
+
+        mockMvc.perform(get("/api/secure/test")
+            .header("Authorization", "Bearer " + token))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldReturn401_WhenTokenHasExpired() throws Exception {
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        Date issuedTenMinutesAgo = new Date(System.currentTimeMillis() - 1000 * 60 * 10);
+        Date expiredFiveMinutesAgo = new Date(System.currentTimeMillis() - 1000 * 60 * 5);
+
+        String token = generateToken(key, issuedTenMinutesAgo, expiredFiveMinutesAgo);
 
         mockMvc.perform(get("/api/secure/test")
             .header("Authorization", "Bearer " + token))
