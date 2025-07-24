@@ -23,4 +23,8 @@ public class TestConstants {
     public static final String HTTP_PUT = "PUT";
     public static final String HTTP_GET = "GET";
     public static final String HTTP_DELETE = "DELETE";
+
+    public static final String SECURE_TEST_ENDPOINT = "/api/secure/test";
+    public static final String AUTHORIZATION = "Authorization";
+    public static final String BEARER = "Bearer ";
 }
