@@ -2,6 +2,8 @@ package com.linkvault.LinkControllerTest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.linkvault.constants.apiPaths.AuthEndpoints;
+import com.linkvault.util.TestConstants;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -48,7 +50,7 @@ public class AuthIntegrationTest {
             """, username);
 
         // Assert
-        MvcResult result = mockMvc.perform(post("/api/auth/login")
+        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
             .andExpect(status().isOk())
@@ -60,22 +62,22 @@ public class AuthIntegrationTest {
         JsonNode jsonNode = mapper.readTree(responseBody);
         String token = jsonNode.get("token").asText();
 
-        mockMvc.perform(get("/api/secure/test")
-            .header("Authorization", "Bearer " + token))
+        mockMvc.perform(get(TestConstants.SECURE_TEST_ENDPOINT)
+            .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token))
             .andExpect(status().isOk())
             .andExpect(content().string(String.format("Hello %s! You are authenticated.", username)));
     }
 
     @Test
     void shouldReturn401_WhenNoTokenProvided() throws Exception {
-        mockMvc.perform(get("/api/secure/test"))
+        mockMvc.perform(get(TestConstants.SECURE_TEST_ENDPOINT))
             .andExpect(status().isUnauthorized());
     }
 
     @Test
     void shouldReturn401_WhenTokenIsInvalid() throws Exception {
-        mockMvc.perform(get("/api/secure/test")
-            .header("Authorization", "Bearer invalid.token.value"))
+        mockMvc.perform(get(TestConstants.SECURE_TEST_ENDPOINT)
+            .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + "invalid.token.value"))
             .andExpect(status().isUnauthorized());
     }
 
@@ -97,8 +99,8 @@ public class AuthIntegrationTest {
 
         String token = generateToken(otherKey, now, expiryDate);
 
-        mockMvc.perform(get("/api/secure/test")
-            .header("Authorization", "Bearer " + token))
+        mockMvc.perform(get(TestConstants.SECURE_TEST_ENDPOINT)
+            .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token))
             .andExpect(status().isUnauthorized());
     }
 
@@ -110,8 +112,8 @@ public class AuthIntegrationTest {
 
         String token = generateToken(key, issuedTenMinutesAgo, expiredFiveMinutesAgo);
 
-        mockMvc.perform(get("/api/secure/test")
-            .header("Authorization", "Bearer " + token))
+        mockMvc.perform(get(TestConstants.SECURE_TEST_ENDPOINT)
+            .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token))
             .andExpect(status().isUnauthorized());
     }
 }

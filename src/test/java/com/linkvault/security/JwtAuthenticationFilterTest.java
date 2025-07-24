@@ -1,5 +1,6 @@
 package com.linkvault.security;
 
+import com.linkvault.util.TestConstants;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +48,7 @@ public class JwtAuthenticationFilterTest {
         String token = "valid.token.value0123456789";
         String username = "user";
 
-        request.addHeader("Authorization", "Bearer " + token);
+        request.addHeader(TestConstants.AUTHORIZATION, TestConstants.BEARER + token);
         UserDetails userDetails = new org.springframework.security.core.userdetails.User(
             username, "password", List.of()
         );
@@ -73,7 +74,7 @@ public class JwtAuthenticationFilterTest {
         // Arrange
         String token = "invalid.token.value";
 
-        request.addHeader("Authorization", "Bearer " + token);
+        request.addHeader(TestConstants.AUTHORIZATION, TestConstants.BEARER + token);
         when(jwtUtils.validateToken(token)).thenReturn(false);
 
         // Act
@@ -92,7 +93,7 @@ public class JwtAuthenticationFilterTest {
         // Arrange
         String token = "";
 
-        request.addHeader("Authorization", "Bearer " + token);
+        request.addHeader(TestConstants.AUTHORIZATION, TestConstants.BEARER + token);
         when(jwtUtils.validateToken(token)).thenReturn(false);
 
         // Act
@@ -109,7 +110,7 @@ public class JwtAuthenticationFilterTest {
     @Test
     void shouldNotSetAuthentication_WhenTokenIsNull() throws Exception {
         // Arrange
-        request.addHeader("Authorization", "Bearer ");
+        request.addHeader(TestConstants.AUTHORIZATION, TestConstants.BEARER);
 
         // Act
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -126,7 +127,7 @@ public class JwtAuthenticationFilterTest {
         // Arrange
         String token = "expired.token.value";
 
-        request.addHeader("Authorization", "Bearer " + token);
+        request.addHeader(TestConstants.AUTHORIZATION, TestConstants.BEARER + token);
         when(jwtUtils.validateToken(token)).thenThrow(new ExpiredJwtException(null, null, "Token expired"));
 
         // Act
@@ -154,7 +155,7 @@ public class JwtAuthenticationFilterTest {
     @Test
     void shouldNotSetAuthentication_WhenHeaderHasWrongPrefix() throws Exception {
         // Arrange
-        request.addHeader("Authorization", "Token invalid.token.abc ");
+        request.addHeader(TestConstants.AUTHORIZATION, "Token invalid.token.abc ");
 
         // Act
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -170,7 +171,7 @@ public class JwtAuthenticationFilterTest {
     void shouldNotSetAuthentication_WhenTokenIsMalformed() throws Exception {
         // Arrange
         String token = "invalid.token";
-        request.addHeader("Authorization", "Bearer " + token);
+        request.addHeader(TestConstants.AUTHORIZATION, TestConstants.BEARER + token);
 
         when(jwtUtils.validateToken(token)).thenReturn(false);
 
@@ -188,7 +189,7 @@ public class JwtAuthenticationFilterTest {
     @Test
     void shouldNotSetAuthentication_WhenHeaderIsGarbage() throws Exception {
         // Arrange
-        request.addHeader("Authorization", "asfg1!$#@A ");
+        request.addHeader(TestConstants.AUTHORIZATION, "asfg1!$#@A ");
 
         // Act
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
