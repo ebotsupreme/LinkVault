@@ -5,14 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,18 +32,10 @@ public class AuthIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
-    private UserDetailsService userDetailsService;
-    @Autowired
     private ObjectMapper objectMapper;
     private static final String username = "user";
     @Value("${jwt.secret}")
     private String jwtSecret;
-
-
-    @BeforeEach
-    void setUp() {
-
-    }
 
     @Test
     void shouldReturnSuccessMessageWhenAuthenticated() throws Exception {
