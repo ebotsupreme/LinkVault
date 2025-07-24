@@ -22,7 +22,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String username;
-    private String password; // TODO Hash
+    private String password;
+    @Enumerated(EnumType.STRING)
+    private Role role = Role.USER;
 
     public User(String username, String password) {
         this.username = username;
