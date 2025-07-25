@@ -33,8 +33,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class AuthIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
-    @Autowired
-    private ObjectMapper objectMapper;
     private static final String username = "user";
     @Value("${jwt.secret}")
     private String jwtSecret;

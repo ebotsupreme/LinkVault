@@ -84,9 +84,7 @@ public class LinkServiceTest {
         when(linkRepository.findById(link2.getId())).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(LinkNotFoundException.class, () -> {
-            linkService.getLinkById(link2.getId());
-        });
+        assertThrows(LinkNotFoundException.class, () -> linkService.getLinkById(link2.getId()));
     }
 
     @Test
@@ -113,9 +111,7 @@ public class LinkServiceTest {
         when(userRepository.findById(TEST_ID3)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(UserNotFoundException.class, () -> {
-            linkService.createLink(TEST_ID3, linkDto1);
-        });
+        assertThrows(UserNotFoundException.class, () -> linkService.createLink(TEST_ID3, linkDto1));
     }
 
     @Test
@@ -126,9 +122,7 @@ public class LinkServiceTest {
             .thenThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE));
 
         // Act & Assert
-        assertThrows(LinkSaveException.class, () -> {
-            linkService.createLink(user.getId(), linkDto1);
-        });
+        assertThrows(LinkSaveException.class, () -> linkService.createLink(user.getId(), linkDto1));
     }
 
     @Test

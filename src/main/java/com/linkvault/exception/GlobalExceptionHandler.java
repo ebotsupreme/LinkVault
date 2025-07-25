@@ -186,4 +186,52 @@ public class GlobalExceptionHandler {
             )
         );
     }
+
+    @ExceptionHandler(UsernameAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponse> handleUsernameAlreadyExists(
+        UsernameAlreadyExistsException ex, HttpServletRequest request
+    ) {
+        warn(log, "Failed to create user: ", ex.getMessage());
+        error(log, LogMessages.STACK_TRACE, ex);
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ApiErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                null,
+                Instant.now().toString(),
+                request.getRequestURI()
+            ));
+    }
+
+    @ExceptionHandler(WeakPasswordException.class)
+    public ResponseEntity<ApiErrorResponse> handleWeakPassword(
+        WeakPasswordException ex, HttpServletRequest request
+    ) {
+        warn(log, "Failed to create user: ", ex.getMessage());
+        error(log, LogMessages.STACK_TRACE, ex);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(new ApiErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(),
+                null,
+                Instant.now().toString(),
+                request.getRequestURI()
+            ));
+    }
+
+    @ExceptionHandler(RegistrationFailedException.class)
+    public ResponseEntity<ApiErrorResponse> handleRegistrationFailure(
+        RegistrationFailedException ex, HttpServletRequest request
+    ) {
+        warn(log, "Failed to create user: ", ex.getMessage());
+        error(log, LogMessages.STACK_TRACE, ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new ApiErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ex.getMessage(),
+                null,
+                Instant.now().toString(),
+                request.getRequestURI()
+            ));
+    }
 }

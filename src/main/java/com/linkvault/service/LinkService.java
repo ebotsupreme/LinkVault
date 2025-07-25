@@ -1,7 +1,6 @@
 package com.linkvault.service;
 
 import com.linkvault.dto.LinkDto;
-import com.linkvault.model.Link;
 
 import java.util.List;
 import java.util.Optional;

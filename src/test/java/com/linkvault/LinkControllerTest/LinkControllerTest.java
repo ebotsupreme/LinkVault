@@ -39,12 +39,16 @@ public class LinkControllerTest extends AbstractValidationTest {
     @Autowired
     private MockMvc mockMvc;
     @MockitoBean
-    private LinkService linkService;
+    private final LinkService linkService;
     private User user;
     @Autowired
     private ObjectMapper objectMapper;
     private LinkDto linkDto1;
     private LinkDto linkDto2;
+
+    public LinkControllerTest(LinkService linkService) {
+        this.linkService = linkService;
+    }
 
     @BeforeEach
     void setUp() {
