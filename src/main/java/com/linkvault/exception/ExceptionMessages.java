@@ -17,4 +17,7 @@ public class ExceptionMessages {
         "User not authorized to delete this link with user ID: %d";
 
     public static final String INVALID_FIELDS = "One or more fields are invalid";
+
+    public static final String METHOD_URI_MESSAGE_FORMAT = "{} {} - {}";
+    public static final String FAILED_TO_CREATE_USER_FORMAT = "Failed to create user: {} {} - {}";
 }

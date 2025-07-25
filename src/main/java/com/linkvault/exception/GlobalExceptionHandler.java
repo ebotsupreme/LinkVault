@@ -24,7 +24,7 @@ public class GlobalExceptionHandler {
     ) {
         warn(
             log,
-            "{} {} - {}",
+            ExceptionMessages.METHOD_URI_MESSAGE_FORMAT,
             request.getMethod(),
             request.getRequestURI(),
             ex.getMessage()
@@ -43,7 +43,7 @@ public class GlobalExceptionHandler {
     ) {
         warn(
             log,
-            "{} {} - {}",
+            ExceptionMessages.METHOD_URI_MESSAGE_FORMAT,
             request.getMethod(),
             request.getRequestURI(),
             ex.getMessage()
@@ -62,7 +62,7 @@ public class GlobalExceptionHandler {
     ) {
         warn(
             log,
-            "{} {} - {}",
+            ExceptionMessages.METHOD_URI_MESSAGE_FORMAT,
             request.getMethod(),
             request.getRequestURI(),
             ex.getMessage()
@@ -81,7 +81,7 @@ public class GlobalExceptionHandler {
     ) {
         warn(
             log,
-            "{} {} - {}",
+            ExceptionMessages.METHOD_URI_MESSAGE_FORMAT,
             request.getMethod(),
             request.getRequestURI(),
             ex.getMessage()
@@ -101,7 +101,7 @@ public class GlobalExceptionHandler {
     ) {
         warn(
             log,
-            "{} {} - {}",
+            ExceptionMessages.METHOD_URI_MESSAGE_FORMAT,
             request.getMethod(),
             request.getRequestURI(),
             ex.getMessage()
@@ -121,7 +121,7 @@ public class GlobalExceptionHandler {
     ) {
         warn(
             log,
-            "{} {} - {}",
+            ExceptionMessages.METHOD_URI_MESSAGE_FORMAT,
             request.getMethod(),
             request.getRequestURI(),
             ex.getMessage()
@@ -235,7 +235,7 @@ public class GlobalExceptionHandler {
     ) {
         warn(
             log,
-            "Failed to create user: {} {} - {}",
+            ExceptionMessages.FAILED_TO_CREATE_USER_FORMAT,
             request.getMethod(),
             request.getRequestURI(),
             ex.getMessage()
@@ -255,7 +255,7 @@ public class GlobalExceptionHandler {
     ) {
         warn(
             log,
-            "Failed to create user: {} {} - {}",
+            ExceptionMessages.FAILED_TO_CREATE_USER_FORMAT,
             request.getMethod(),
             request.getRequestURI(),
             ex.getMessage()
@@ -275,7 +275,7 @@ public class GlobalExceptionHandler {
     ) {
         warn(
             log,
-            "Failed to create user: {} {} - {}",
+            ExceptionMessages.FAILED_TO_CREATE_USER_FORMAT,
             request.getMethod(),
             request.getRequestURI(),
             ex.getMessage()
