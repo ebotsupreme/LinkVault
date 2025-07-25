@@ -29,14 +29,12 @@ public class GlobalExceptionHandler {
             request.getRequestURI(),
             ex.getMessage()
         );
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(new ApiErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                ex.getMessage(),
-                null,
-                Instant.now().toString(),
-                request.getRequestURI()
-            ));
+
+        return buildErrorResponse(
+            HttpStatus.NOT_FOUND,
+            ex.getMessage(),
+            request
+        );
     }
 
     @ExceptionHandler(LinkNotFoundException.class)
@@ -50,14 +48,12 @@ public class GlobalExceptionHandler {
             request.getRequestURI(),
             ex.getMessage()
         );
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(new ApiErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                ex.getMessage(),
-                null,
-                Instant.now().toString(),
-                request.getRequestURI()
-            ));
+
+        return buildErrorResponse(
+            HttpStatus.NOT_FOUND,
+            ex.getMessage(),
+            request
+        );
     }
 
     @ExceptionHandler(LinksNotFoundException.class)
@@ -71,14 +67,12 @@ public class GlobalExceptionHandler {
             request.getRequestURI(),
             ex.getMessage()
         );
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(new ApiErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                ex.getMessage(),
-                null,
-                Instant.now().toString(),
-                request.getRequestURI()
-            ));
+
+        return buildErrorResponse(
+            HttpStatus.NOT_FOUND,
+            ex.getMessage(),
+            request
+        );
     }
 
     @ExceptionHandler(LinkSaveException.class)
@@ -94,14 +88,11 @@ public class GlobalExceptionHandler {
         );
         error(log, LogMessages.STACK_TRACE, ex);
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ApiErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                ex.getMessage(),
-                null,
-                Instant.now().toString(),
-                request.getRequestURI()
-            ));
+        return buildErrorResponse(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage(),
+            request
+        );
     }
 
     @ExceptionHandler(LinkDeleteException.class)
@@ -116,14 +107,12 @@ public class GlobalExceptionHandler {
             ex.getMessage()
         );
         error(log, LogMessages.STACK_TRACE, ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ApiErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                ex.getMessage(),
-                null,
-                Instant.now().toString(),
-                request.getRequestURI()
-            ));
+
+        return buildErrorResponse(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage(),
+            request
+        );
     }
 
     @ExceptionHandler(LinksDeleteException.class)
@@ -138,14 +127,12 @@ public class GlobalExceptionHandler {
             ex.getMessage()
         );
         error(log, LogMessages.STACK_TRACE, ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ApiErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                ex.getMessage(),
-                null,
-                Instant.now().toString(),
-                request.getRequestURI()
-            ));
+
+        return buildErrorResponse(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage(),
+            request
+        );
     }
 
     @ExceptionHandler(Exception.class)
@@ -160,14 +147,12 @@ public class GlobalExceptionHandler {
             ex.getMessage()
         );
         error(log, LogMessages.STACK_TRACE, ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ApiErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                ex.getMessage(),
-                null,
-                Instant.now().toString(),
-                request.getRequestURI()
-            ));
+
+        return buildErrorResponse(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage(),
+            request
+        );
     }
 
     @ExceptionHandler(UnauthorizedAccessException.class)
@@ -181,14 +166,12 @@ public class GlobalExceptionHandler {
            request.getRequestURI(),
            ex.getMessage()
        );
-       return ResponseEntity.status(HttpStatus.FORBIDDEN)
-           .body(new ApiErrorResponse(
-               HttpStatus.FORBIDDEN.value(),
-               ex.getMessage(),
-               null,
-               Instant.now().toString(),
-               request.getRequestURI()
-           ));
+
+        return buildErrorResponse(
+            HttpStatus.FORBIDDEN,
+            ex.getMessage(),
+            request
+        );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -235,6 +218,7 @@ public class GlobalExceptionHandler {
             request.getRequestURI(),
             errors
         );
+
         return ResponseEntity.badRequest().body(new ApiErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 ExceptionMessages.INVALID_FIELDS,
@@ -257,14 +241,12 @@ public class GlobalExceptionHandler {
             ex.getMessage()
         );
         error(log, LogMessages.STACK_TRACE, ex);
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-            .body(new ApiErrorResponse(
-                HttpStatus.CONFLICT.value(),
-                ex.getMessage(),
-                null,
-                Instant.now().toString(),
-                request.getRequestURI()
-            ));
+
+        return buildErrorResponse(
+            HttpStatus.CONFLICT,
+            ex.getMessage(),
+            request
+        );
     }
 
     @ExceptionHandler(WeakPasswordException.class)
@@ -279,14 +261,12 @@ public class GlobalExceptionHandler {
             ex.getMessage()
         );
         error(log, LogMessages.STACK_TRACE, ex);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(new ApiErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage(),
-                null,
-                Instant.now().toString(),
-                request.getRequestURI()
-            ));
+
+        return buildErrorResponse(
+            HttpStatus.BAD_REQUEST,
+            ex.getMessage(),
+            request
+        );
     }
 
     @ExceptionHandler(RegistrationFailedException.class)
@@ -301,13 +281,25 @@ public class GlobalExceptionHandler {
             ex.getMessage()
         );
         error(log, LogMessages.STACK_TRACE, ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+
+        return buildErrorResponse(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ex.getMessage(),
+            request
+        );
+    }
+
+    private ResponseEntity<ApiErrorResponse> buildErrorResponse(
+        HttpStatus status, String message, HttpServletRequest request
+    ) {
+        return ResponseEntity.status(status)
             .body(new ApiErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                ex.getMessage(),
+                status.value(),
+                message,
                 null,
                 Instant.now().toString(),
                 request.getRequestURI()
-            ));
+            )
+        );
     }
 }
