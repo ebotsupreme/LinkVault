@@ -22,7 +22,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleUserNotFound(
         UserNotFoundException ex, HttpServletRequest request
     ) {
-        warn(log, "User not found: {}", ex.getMessage());
+        warn(
+            log,
+            "{} {} - {}",
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage()
+        );
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
             .body(new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
@@ -37,7 +43,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleLinkNotFound(
         LinkNotFoundException ex, HttpServletRequest request
     ) {
-        warn(log, "Link not found: {}", ex.getMessage());
+        warn(
+            log,
+            "{} {} - {}",
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage()
+        );
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
             .body(new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
@@ -52,7 +64,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleLinksNotFound(
         LinksNotFoundException ex, HttpServletRequest request
     ) {
-        warn(log, "Links not found: {}", ex.getMessage());
+        warn(
+            log,
+            "{} {} - {}",
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage()
+        );
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
             .body(new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
@@ -67,7 +85,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleLinkSave(
         LinkSaveException ex, HttpServletRequest request
     ) {
-        warn(log, "Link save failed: {}", ex.getMessage());
+        warn(
+            log,
+            "{} {} - {}",
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage()
+        );
         error(log, LogMessages.STACK_TRACE, ex);
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -84,7 +108,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleLinkDelete(
         LinkDeleteException ex, HttpServletRequest request
     ) {
-        warn(log, LogMessages.DELETE_LINK_FAILED, ex.getMessage());
+        warn(
+            log,
+            "{} {} - {}",
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage()
+        );
         error(log, LogMessages.STACK_TRACE, ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
@@ -100,7 +130,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleLinksDelete(
         LinksDeleteException ex, HttpServletRequest request
     ) {
-        warn(log, LogMessages.DELETE_LINK_FAILED, ex.getMessage());
+        warn(
+            log,
+            "{} {} - {}",
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage()
+        );
         error(log, LogMessages.STACK_TRACE, ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
@@ -116,7 +152,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleGeneric(
         Exception ex, HttpServletRequest request
     ) {
-        warn(log, "Unhandled exception occurred: {}", ex.getMessage());
+        warn(
+            log,
+            "Unhandled exception occurred: {} {} - {}",
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage()
+        );
         error(log, LogMessages.STACK_TRACE, ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
@@ -132,7 +174,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleUnauthorized(
         UnauthorizedAccessException ex, HttpServletRequest request
     ) {
-       warn(log, "Unauthorized access attempt: {}", ex.getMessage());
+       warn(
+           log,
+           "Unauthorized access attempt: {} {} - {}",
+           request.getMethod(),
+           request.getRequestURI(),
+           ex.getMessage()
+       );
        return ResponseEntity.status(HttpStatus.FORBIDDEN)
            .body(new ApiErrorResponse(
                HttpStatus.FORBIDDEN.value(),
@@ -153,8 +201,13 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                     .toList();
 
-        warn(log, "Validation error(s) on [{} {}]: {}",
-            request.getMethod(), request.getRequestURI() ,validationMessages);
+        warn(
+            log,
+            "Validation error(s) on [{} {}]: {}",
+            request.getMethod(),
+            request.getRequestURI(),
+            validationMessages
+        );
         return ResponseEntity.badRequest().body(new ApiErrorResponse(
             HttpStatus.BAD_REQUEST.value(),
             ExceptionMessages.INVALID_FIELDS,
@@ -175,8 +228,13 @@ public class GlobalExceptionHandler {
                 violation.getPropertyPath() + ": " + violation.getMessage())
             .toList();
 
-        warn(log, "Constraint violation(s): {} {}: {}",
-            request.getMethod(), request.getRequestURI(), errors);
+        warn(
+            log,
+            "Constraint violation(s): {} {}: {}",
+            request.getMethod(),
+            request.getRequestURI(),
+            errors
+        );
         return ResponseEntity.badRequest().body(new ApiErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 ExceptionMessages.INVALID_FIELDS,
@@ -191,7 +249,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleUsernameAlreadyExists(
         UsernameAlreadyExistsException ex, HttpServletRequest request
     ) {
-        warn(log, "Failed to create user: ", ex.getMessage());
+        warn(
+            log,
+            "Failed to create user: {} {} - {}",
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage()
+        );
         error(log, LogMessages.STACK_TRACE, ex);
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new ApiErrorResponse(
@@ -207,7 +271,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleWeakPassword(
         WeakPasswordException ex, HttpServletRequest request
     ) {
-        warn(log, "Failed to create user: ", ex.getMessage());
+        warn(
+            log,
+            "Failed to create user: {} {} - {}",
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage()
+        );
         error(log, LogMessages.STACK_TRACE, ex);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(new ApiErrorResponse(
@@ -223,7 +293,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleRegistrationFailure(
         RegistrationFailedException ex, HttpServletRequest request
     ) {
-        warn(log, "Failed to create user: ", ex.getMessage());
+        warn(
+            log,
+            "Failed to create user: {} {} - {}",
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage()
+        );
         error(log, LogMessages.STACK_TRACE, ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiErrorResponse(
