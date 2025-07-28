@@ -20,7 +20,12 @@ public class RegisterRequest {
         message = "Username can only contain letters and numbers"
     )
     private String username;
+
     @NotBlank(message = "Password cannot be empty")
     @Size(min = 8, message = "Password must be at least 8 characters")
+    @Pattern(
+        regexp = "^(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+        message = "Password must contain at least one uppercase letter, one number, and one symbol from @$!%*?&"
+    )
     private String password;
 }

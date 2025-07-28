@@ -70,5 +70,4 @@ public class UserServiceTest {
         assertThrows(UsernameAlreadyExistsException.class, () ->
             userService.registerUser(username, rawPassword));
     }
-
 }
