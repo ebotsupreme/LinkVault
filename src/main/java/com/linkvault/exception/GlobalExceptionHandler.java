@@ -282,6 +282,4 @@ public class GlobalExceptionHandler {
             )
         );
     }
-
-
 }

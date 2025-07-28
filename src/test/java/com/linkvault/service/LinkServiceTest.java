@@ -1,4 +1,4 @@
-package com.linkvault.LinkServiceTest;
+package com.linkvault.service;
 
 import com.linkvault.dto.LinkDto;
 import com.linkvault.exception.*;
@@ -6,8 +6,6 @@ import com.linkvault.model.Link;
 import com.linkvault.model.User;
 import com.linkvault.repository.LinkRepository;
 import com.linkvault.repository.UserRepository;
-import com.linkvault.service.LinkService;
-import com.linkvault.service.LinkServiceImpl;
 import com.linkvault.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

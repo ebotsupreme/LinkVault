@@ -1,8 +1,7 @@
-package com.linkvault.LinkControllerTest;
+package com.linkvault.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.LinkEndpoints;
-import com.linkvault.controller.LinkController;
 import com.linkvault.dto.LinkDto;
 import com.linkvault.exception.*;
 import com.linkvault.model.User;
