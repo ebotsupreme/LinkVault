@@ -61,7 +61,7 @@ public class AuthController {
     }
 
     @PostMapping(AuthEndpoints.REGISTER)
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         userService.registerUser(request.getUsername(), request.getPassword());
         return ResponseEntity.ok("User registered successfully");
     }

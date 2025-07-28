@@ -1,8 +1,6 @@
 package com.linkvault.service;
 
-import com.linkvault.exception.RegistrationFailedException;
-import com.linkvault.exception.UsernameAlreadyExistsException;
-import com.linkvault.exception.WeakPasswordException;
+import com.linkvault.exception.*;
 import com.linkvault.model.Role;
 import com.linkvault.model.User;
 import com.linkvault.repository.UserRepository;
@@ -27,10 +25,6 @@ public class UserService {
     public void registerUser(String username, String rawPassword) {
         if (userRepository.existsByUsername(username)) {
             throw new UsernameAlreadyExistsException(username);
-        }
-
-        if (rawPassword.length() < 8) {
-            throw new WeakPasswordException(username);
         }
 
         try {

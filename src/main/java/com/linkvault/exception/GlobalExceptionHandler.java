@@ -249,26 +249,6 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(WeakPasswordException.class)
-    public ResponseEntity<ApiErrorResponse> handleWeakPassword(
-        WeakPasswordException ex, HttpServletRequest request
-    ) {
-        warn(
-            log,
-            ExceptionMessages.FAILED_TO_CREATE_USER_FORMAT,
-            request.getMethod(),
-            request.getRequestURI(),
-            ex.getMessage()
-        );
-        error(log, LogMessages.STACK_TRACE, ex);
-
-        return buildErrorResponse(
-            HttpStatus.BAD_REQUEST,
-            ex.getMessage(),
-            request
-        );
-    }
-
     @ExceptionHandler(RegistrationFailedException.class)
     public ResponseEntity<ApiErrorResponse> handleRegistrationFailure(
         RegistrationFailedException ex, HttpServletRequest request
@@ -302,4 +282,6 @@ public class GlobalExceptionHandler {
             )
         );
     }
+
+
 }
