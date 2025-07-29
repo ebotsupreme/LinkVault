@@ -1,6 +1,6 @@
-package com.linkvault.security;
+package com.linkvault.unit.security;
 
-import com.linkvault.util.TestConstants;
+import com.linkvault.unit.util.TestConstants;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.BeforeEach;

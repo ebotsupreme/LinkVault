@@ -1,4 +1,4 @@
-package com.linkvault.service;
+package com.linkvault.unit.service;
 
 import com.linkvault.dto.LinkDto;
 import com.linkvault.exception.*;
@@ -6,7 +6,7 @@ import com.linkvault.model.Link;
 import com.linkvault.model.User;
 import com.linkvault.repository.LinkRepository;
 import com.linkvault.repository.UserRepository;
-import com.linkvault.util.TestDataFactory;
+import com.linkvault.unit.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.linkvault.util.TestDataFactory.*;
+import static com.linkvault.unit.util.TestDataFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;

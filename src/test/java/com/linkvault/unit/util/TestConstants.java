@@ -1,4 +1,4 @@
-package com.linkvault.util;
+package com.linkvault.unit.util;
 
 public class TestConstants {
     public static final String LINK_ID_PATH_VAR = "{linkId}";

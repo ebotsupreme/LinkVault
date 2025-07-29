@@ -1,15 +1,16 @@
-package com.linkvault.controller;
+package com.linkvault.unit.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.LinkEndpoints;
+import com.linkvault.controller.LinkController;
 import com.linkvault.dto.LinkDto;
 import com.linkvault.exception.*;
 import com.linkvault.model.User;
 import com.linkvault.service.LinkService;
-import com.linkvault.util.AbstractValidationTest;
-import com.linkvault.util.JsonBuilder;
-import com.linkvault.util.TestConstants;
-import com.linkvault.util.TestDataFactory;
+import com.linkvault.unit.util.AbstractValidationTest;
+import com.linkvault.unit.util.JsonBuilder;
+import com.linkvault.unit.util.TestConstants;
+import com.linkvault.unit.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,11 +38,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class LinkControllerTest extends AbstractValidationTest {
     @Autowired
     private MockMvc mockMvc;
+
     @MockitoBean
     private LinkService linkService;
+
     private User user;
+
     @Autowired
     private ObjectMapper objectMapper;
+
     private LinkDto linkDto1;
     private LinkDto linkDto2;
 

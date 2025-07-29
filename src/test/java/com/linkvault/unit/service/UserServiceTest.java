@@ -1,4 +1,4 @@
-package com.linkvault.service;
+package com.linkvault.unit.service;
 
 import com.linkvault.exception.RegistrationFailedException;
 import com.linkvault.exception.UsernameAlreadyExistsException;

@@ -1,4 +1,4 @@
-package com.linkvault.controller;
+package com.linkvault.integration.auth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,7 +6,7 @@ import com.linkvault.constants.apiPaths.AuthEndpoints;
 import com.linkvault.exception.RegistrationFailedException;
 import com.linkvault.exception.UsernameAlreadyExistsException;
 import com.linkvault.service.UserService;
-import com.linkvault.util.TestConstants;
+import com.linkvault.unit.util.TestConstants;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
