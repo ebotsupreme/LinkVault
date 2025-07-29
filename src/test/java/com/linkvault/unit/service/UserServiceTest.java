@@ -4,6 +4,7 @@ import com.linkvault.exception.RegistrationFailedException;
 import com.linkvault.exception.UsernameAlreadyExistsException;
 import com.linkvault.model.User;
 import com.linkvault.repository.UserRepository;
+import com.linkvault.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,8 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
