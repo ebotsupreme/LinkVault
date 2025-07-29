@@ -1,5 +1,6 @@
 package com.linkvault.service;
 
+import com.linkvault.exception.RegistrationFailedException;
 import com.linkvault.exception.UsernameAlreadyExistsException;
 import com.linkvault.model.User;
 import com.linkvault.repository.UserRepository;
@@ -69,5 +70,24 @@ public class UserServiceTest {
         // Act & Assert
         assertThrows(UsernameAlreadyExistsException.class, () ->
             userService.registerUser(username, rawPassword));
+    }
+
+    @Test
+    void shouldThrowRegistrationFailedException_WhenSavingUserFails() {
+        // Arrange
+        String username = "existingUser";
+        String rawPassword = "validPassword123";
+        when(userRepository.existsByUsername(username)).thenReturn(false);
+        when(userRepository.save(any(User.class)))
+            .thenThrow(new RuntimeException("Database write failed"));
+
+        // Act & Assert
+        RegistrationFailedException exception = assertThrows(
+            RegistrationFailedException.class,
+            () -> userService.registerUser(username, rawPassword)
+        );
+
+        assertEquals("Unexpected error during registration for user: " + username, exception.getMessage());
+        assertEquals("Database write failed", exception.getCause().getMessage());
     }
 }

@@ -3,6 +3,9 @@ package com.linkvault.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.AuthEndpoints;
+import com.linkvault.exception.RegistrationFailedException;
+import com.linkvault.exception.UsernameAlreadyExistsException;
+import com.linkvault.service.UserService;
 import com.linkvault.util.TestConstants;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
@@ -15,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -22,6 +26,7 @@ import javax.crypto.SecretKey;
 
 import java.util.Date;
 
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -33,9 +38,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class AuthIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
+
     private static final String username = "user";
+
     @Value("${jwt.secret}")
     private String jwtSecret;
+
+    @MockitoBean
+    UserService userService;
 
     @Test
     void shouldReturnSuccessMessageWhenAuthenticated() throws Exception {
@@ -113,5 +123,84 @@ public class AuthIntegrationTest {
         mockMvc.perform(get(TestConstants.SECURE_TEST_ENDPOINT)
             .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token))
             .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldReturn200_WhenUserRegisters() throws Exception {
+        // Arrange
+        String json = String.format("""
+            {
+                "username": "%s",
+                "password": "validPassword1@"
+            }
+            """, username);
+
+        doNothing().when(userService).registerUser(username, "validPassword1@");
+
+        // Assert
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(json))
+            .andExpect(status().isOk())
+            .andExpect(content().string("User registered successfully"));
+    }
+
+    @Test
+    void shouldReturn409_WhenUserNameAlreadyExists() throws Exception {
+        // Arrange
+        String json = String.format("""
+            {
+                "username": "%s",
+                "password": "validPassword1@"
+            }
+            """, username);
+
+        doThrow(new UsernameAlreadyExistsException(username))
+            .when(userService).registerUser(username, "validPassword1@");
+
+        // Assert
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message").value(String.format("Username %s is already taken", username)));
+    }
+
+    @Test
+    void shouldReturn400_WhenBadRequestIsSent() throws Exception {
+        // Arrange
+        String json = """
+            {
+                "username": "",
+                "password": ""
+            }
+            """;
+
+        // Act & Assert
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturn500_WhenUserRegistrationFails() throws Exception {
+        // Arrange
+        String json = String.format("""
+            {
+                "username": "%s",
+                "password": "validPassword1@"
+            }
+            """, username);
+
+        doThrow(
+            new RegistrationFailedException(username, new RuntimeException("Database write failed"))
+        ).when(userService).registerUser(username, "validPassword1@");
+
+        // Assert
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isInternalServerError());
     }
 }
