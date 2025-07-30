@@ -4,7 +4,7 @@ import com.linkvault.exception.RegistrationFailedException;
 import com.linkvault.exception.UsernameAlreadyExistsException;
 import com.linkvault.model.User;
 import com.linkvault.repository.UserRepository;
-import com.linkvault.service.UserService;
+import com.linkvault.service.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,12 +24,12 @@ public class UserServiceTest {
     @Mock
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
-    private UserService userService;
+    private UserServiceImpl userServiceImpl;
 
     @BeforeEach
     void setUp() {
         passwordEncoder = new BCryptPasswordEncoder();
-        userService = new UserService(userRepository, passwordEncoder);
+        userServiceImpl = new UserServiceImpl(userRepository, passwordEncoder);
     }
 
     @Test
@@ -48,7 +48,7 @@ public class UserServiceTest {
         );
 
         // Act
-        userService.registerUser(username, rawPassword);
+        userServiceImpl.registerUser(username, rawPassword);
 
         // Assert
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -68,7 +68,7 @@ public class UserServiceTest {
 
         // Act & Assert
         assertThrows(UsernameAlreadyExistsException.class, () ->
-            userService.registerUser(username, rawPassword));
+            userServiceImpl.registerUser(username, rawPassword));
     }
 
     @Test
@@ -83,7 +83,7 @@ public class UserServiceTest {
         // Act & Assert
         RegistrationFailedException exception = assertThrows(
             RegistrationFailedException.class,
-            () -> userService.registerUser(username, rawPassword)
+            () -> userServiceImpl.registerUser(username, rawPassword)
         );
 
         assertEquals("Unexpected error during registration for user: " + username, exception.getMessage());

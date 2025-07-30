@@ -5,7 +5,7 @@ import com.linkvault.dto.AuthResponse;
 import com.linkvault.dto.LoginRequest;
 import com.linkvault.dto.RegisterRequest;
 import com.linkvault.security.JwtUtils;
-import com.linkvault.service.UserService;
+import com.linkvault.service.UserServiceImpl;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -28,16 +28,16 @@ import static com.linkvault.util.LogUtils.info;
 public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
-    private final UserService userService;
+    private final UserServiceImpl userServiceImpl;
 
     public AuthController(
         AuthenticationManager authenticationManager,
         JwtUtils jwtUtils,
-        UserService userService
+        UserServiceImpl userServiceImpl
     ) {
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
-        this.userService = userService;
+        this.userServiceImpl = userServiceImpl;
     }
 
     @PostMapping(AuthEndpoints.LOGIN)
@@ -62,7 +62,7 @@ public class AuthController {
 
     @PostMapping(AuthEndpoints.REGISTER)
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
-        userService.registerUser(request.getUsername(), request.getPassword());
+        userServiceImpl.registerUser(request.getUsername(), request.getPassword());
         return ResponseEntity.ok("User registered successfully");
     }
 }

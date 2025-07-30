@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.AuthEndpoints;
 import com.linkvault.exception.RegistrationFailedException;
 import com.linkvault.exception.UsernameAlreadyExistsException;
-import com.linkvault.service.UserService;
+import com.linkvault.service.UserServiceImpl;
 import com.linkvault.unit.util.TestConstants;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
@@ -45,7 +45,7 @@ public class AuthIntegrationTest {
     private String jwtSecret;
 
     @MockitoBean
-    UserService userService;
+    UserServiceImpl userServiceImpl;
 
     @Test
     void shouldReturnSuccessMessageWhenAuthenticated() throws Exception {
@@ -135,7 +135,7 @@ public class AuthIntegrationTest {
             }
             """, username);
 
-        doNothing().when(userService).registerUser(username, "validPassword1@");
+        doNothing().when(userServiceImpl).registerUser(username, "validPassword1@");
 
         // Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -156,7 +156,7 @@ public class AuthIntegrationTest {
             """, username);
 
         doThrow(new UsernameAlreadyExistsException(username))
-            .when(userService).registerUser(username, "validPassword1@");
+            .when(userServiceImpl).registerUser(username, "validPassword1@");
 
         // Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -195,7 +195,7 @@ public class AuthIntegrationTest {
 
         doThrow(
             new RegistrationFailedException(username, new RuntimeException("Database write failed"))
-        ).when(userService).registerUser(username, "validPassword1@");
+        ).when(userServiceImpl).registerUser(username, "validPassword1@");
 
         // Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)

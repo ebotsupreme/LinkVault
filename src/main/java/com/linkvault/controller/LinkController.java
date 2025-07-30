@@ -3,10 +3,13 @@ package com.linkvault.controller;
 import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.dto.LinkDto;
 import com.linkvault.service.LinkService;
+import com.linkvault.service.UserServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,16 +23,29 @@ import static com.linkvault.util.LogUtils.*;
 @RequestMapping(LinkEndpoints.BASE_LINKS)
 public class LinkController {
     private final LinkService linkService;
+    private final UserServiceImpl userServiceImpl;
 
-    public LinkController(LinkService linkService) {
+    public LinkController(LinkService linkService, UserServiceImpl userServiceImpl) {
         this.linkService = linkService;
+        this.userServiceImpl = userServiceImpl;
     }
 
-    @GetMapping(LinkEndpoints.BY_USER)
-    public List<LinkDto> getAllLinksForUser(@PathVariable @Min(1) Long userId) {
+    @GetMapping
+    public ResponseEntity<List<LinkDto>> getAllLinksForUser(
+        @AuthenticationPrincipal UserDetails userDetails) {
+
+        String username = userDetails.getUsername();
+        Long userId = userServiceImpl.getUserIdByUsername(username);
+
         info(log, "Getting all links for user ID: {}", userId);
-        return linkService.getAllLinksForUser(userId);
+        return ResponseEntity.ok(linkService.getAllLinksForUser(userId));
     }
+
+//    @GetMapping(LinkEndpoints.BY_USER)
+//    public List<LinkDto> getAllLinksForUser(@PathVariable @Min(1) Long userId) {
+//        info(log, "Getting all links for user ID: {}", userId);
+//        return linkService.getAllLinksForUser(userId);
+//    }
 
     @GetMapping(LinkEndpoints.BY_LINK_ID)
     public ResponseEntity<LinkDto> getLinkById(@PathVariable @Min(1) Long linkId) {
