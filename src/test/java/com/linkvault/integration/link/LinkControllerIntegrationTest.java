@@ -90,4 +90,7 @@ public class LinkControllerIntegrationTest {
             .andExpect(jsonPath("$[1].title").value(link2.getTitle()));
     }
 
+    void shouldReturnUnauthorizedForUser_WhenFetchingLinksWithoutAToken () {
+
+    }
 }

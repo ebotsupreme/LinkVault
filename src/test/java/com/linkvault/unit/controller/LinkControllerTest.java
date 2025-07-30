@@ -5,8 +5,10 @@ import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.controller.LinkController;
 import com.linkvault.dto.LinkDto;
 import com.linkvault.exception.*;
+import com.linkvault.model.Role;
 import com.linkvault.model.User;
 import com.linkvault.service.LinkService;
+import com.linkvault.service.UserServiceImpl;
 import com.linkvault.unit.util.AbstractValidationTest;
 import com.linkvault.unit.util.JsonBuilder;
 import com.linkvault.unit.util.TestConstants;
@@ -16,10 +18,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -30,11 +33,11 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(LinkController.class)
-@AutoConfigureMockMvc(addFilters = false)
 public class LinkControllerTest extends AbstractValidationTest {
     @Autowired
     private MockMvc mockMvc;
@@ -42,11 +45,13 @@ public class LinkControllerTest extends AbstractValidationTest {
     @MockitoBean
     private LinkService linkService;
 
-    private User user;
+    @MockitoBean
+    private UserServiceImpl userServiceImpl;
 
     @Autowired
     private ObjectMapper objectMapper;
 
+    private User user;
     private LinkDto linkDto1;
     private LinkDto linkDto2;
 
@@ -63,12 +68,18 @@ public class LinkControllerTest extends AbstractValidationTest {
         // Arrange
         when(linkService.getAllLinksForUser(user.getId()))
             .thenReturn(List.of(linkDto1, linkDto2));
+        when(userServiceImpl.getUserIdByUsername("eddie"))
+            .thenReturn(user.getId());
 
         // Assert
-        String userIdPath = TestDataFactory
-            .buildUserEndpointWithId(TestConstants.USER_ID_PATH_VAR, user.getId());
+        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+            "eddie",
+            "password123",
+            List.of(new SimpleGrantedAuthority(Role.USER.toString()))
+        );
 
-        mockMvc.perform(get(userIdPath))
+        mockMvc.perform(get("/api/links")
+            .with(user(userDetails)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].title").value(linkDto1.title()))
             .andExpect(jsonPath("$[1].title").value(linkDto2.title()));
