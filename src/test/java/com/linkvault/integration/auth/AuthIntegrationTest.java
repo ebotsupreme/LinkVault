@@ -5,17 +5,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.AuthEndpoints;
 import com.linkvault.exception.RegistrationFailedException;
 import com.linkvault.exception.UsernameAlreadyExistsException;
+import com.linkvault.model.Role;
+import com.linkvault.model.User;
+import com.linkvault.repository.UserRepository;
 import com.linkvault.service.UserServiceImpl;
 import com.linkvault.unit.util.TestConstants;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -39,13 +44,30 @@ public class AuthIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
-    private static final String username = "user";
+    private static final String username = "validUsername";
+    private static final String rawPassword = "validPassword1@";
 
     @Value("${jwt.secret}")
     private String jwtSecret;
 
     @MockitoBean
     UserServiceImpl userServiceImpl;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @BeforeEach
+    void setUp() {
+        userRepository.deleteAll();
+
+        User testUser = new User();
+        testUser.setUsername(username);
+        testUser.setPassword(passwordEncoder.encode(rawPassword));
+        testUser.setRole(Role.USER);
+
+        userRepository.save(testUser);
+    }
 
     @Test
     void shouldReturnSuccessMessageWhenAuthenticated() throws Exception {
@@ -53,9 +75,9 @@ public class AuthIntegrationTest {
         String json = String.format("""
             {
                 "username": "%s",
-                "password": "password"
+                "password": "%s"
             }
-            """, username);
+            """, username, rawPassword);
 
         // Assert
         MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
@@ -131,11 +153,11 @@ public class AuthIntegrationTest {
         String json = String.format("""
             {
                 "username": "%s",
-                "password": "validPassword1@"
+                "password": "%s"
             }
-            """, username);
+            """, username, rawPassword);
 
-        doNothing().when(userServiceImpl).registerUser(username, "validPassword1@");
+        doNothing().when(userServiceImpl).registerUser(username, rawPassword);
 
         // Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -151,12 +173,12 @@ public class AuthIntegrationTest {
         String json = String.format("""
             {
                 "username": "%s",
-                "password": "validPassword1@"
+                "password": "%s"
             }
-            """, username);
+            """, username, rawPassword);
 
         doThrow(new UsernameAlreadyExistsException(username))
-            .when(userServiceImpl).registerUser(username, "validPassword1@");
+            .when(userServiceImpl).registerUser(username, rawPassword);
 
         // Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -189,13 +211,13 @@ public class AuthIntegrationTest {
         String json = String.format("""
             {
                 "username": "%s",
-                "password": "validPassword1@"
+                "password": "%s"
             }
-            """, username);
+            """, username, rawPassword);
 
         doThrow(
             new RegistrationFailedException(username, new RuntimeException("Database write failed"))
-        ).when(userServiceImpl).registerUser(username, "validPassword1@");
+        ).when(userServiceImpl).registerUser(username, rawPassword);
 
         // Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)

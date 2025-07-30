@@ -41,12 +41,6 @@ public class LinkController {
         return ResponseEntity.ok(linkService.getAllLinksForUser(userId));
     }
 
-//    @GetMapping(LinkEndpoints.BY_USER)
-//    public List<LinkDto> getAllLinksForUser(@PathVariable @Min(1) Long userId) {
-//        info(log, "Getting all links for user ID: {}", userId);
-//        return linkService.getAllLinksForUser(userId);
-//    }
-
     @GetMapping(LinkEndpoints.BY_LINK_ID)
     public ResponseEntity<LinkDto> getLinkById(@PathVariable @Min(1) Long linkId) {
         info(log, "Getting link by ID: {}", linkId);

@@ -1,7 +1,9 @@
 package com.linkvault.config;
 
+import com.linkvault.repository.UserRepository;
 import com.linkvault.security.JwtAuthenticationFilter;
 import com.linkvault.security.JwtUtils;
+import com.linkvault.service.CustomUserDetailsService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,14 +31,19 @@ public class SecurityConfig {
         return new JwtAuthenticationFilter(jwtUtils, userDetailsService);
     }
 
-    @Bean
-    public UserDetailsService userDetailService(PasswordEncoder passwordEncoder) {
-        var user = User.withUsername("user")
-            .password(passwordEncoder.encode("password"))
-            .roles("USER")
-            .build();
+//    @Bean
+//    public UserDetailsService userDetailService(PasswordEncoder passwordEncoder) {
+//        var user = User.withUsername("user")
+//            .password(passwordEncoder.encode("password"))
+//            .roles("USER")
+//            .build();
+//
+//        return new InMemoryUserDetailsManager(user);
+//    }
 
-        return new InMemoryUserDetailsManager(user);
+    @Bean
+    public UserDetailsService userDetailsService(UserRepository userRepository) {
+        return new CustomUserDetailsService(userRepository);
     }
 
     @Bean
