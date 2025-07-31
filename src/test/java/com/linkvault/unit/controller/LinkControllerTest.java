@@ -18,10 +18,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -38,6 +41,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(LinkController.class)
+@AutoConfigureMockMvc(addFilters = false)
 public class LinkControllerTest extends AbstractValidationTest {
     @Autowired
     private MockMvc mockMvc;
@@ -71,18 +75,24 @@ public class LinkControllerTest extends AbstractValidationTest {
         when(userServiceImpl.getUserIdByUsername("eddie"))
             .thenReturn(user.getId());
 
-        // Assert
+        // Setup fake auth
         UserDetails userDetails = new org.springframework.security.core.userdetails.User(
             "eddie",
             "password123",
             List.of(new SimpleGrantedAuthority(Role.USER.toString()))
         );
+        UsernamePasswordAuthenticationToken auth =
+            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
         mockMvc.perform(get("/api/links")
             .with(user(userDetails)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].title").value(linkDto1.title()))
             .andExpect(jsonPath("$[1].title").value(linkDto2.title()));
+
+        // Cleanup
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -188,13 +198,30 @@ public class LinkControllerTest extends AbstractValidationTest {
     @Test
     void shouldReturnNoContentStatusWhenLinkIsDeleted() throws Exception {
         // Arrange
-        doNothing().when(linkService).deleteLink(linkDto1.id());
+        doNothing().when(linkService).deleteLink(linkDto1.id(), user.getId());
+        when(userServiceImpl.getUserIdByUsername("eddie"))
+            .thenReturn(user.getId());
+
+        // Setup fake auth
+        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+            "eddie",
+            "password123",
+            List.of(new SimpleGrantedAuthority(Role.USER.toString()))
+        );
+        UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
         // Assert
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
 
-        mockMvc.perform(delete(linkDtoIdPath)).andExpect(status().isNoContent());
+        mockMvc.perform(delete(linkDtoIdPath)
+                .with(user(userDetails)))
+            .andExpect(status().isNoContent());
+
+        // Cleanup
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -203,7 +230,7 @@ public class LinkControllerTest extends AbstractValidationTest {
         doThrow(
             new LinkDeleteException(linkDto1,
                 new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
-        ).when(linkService).deleteLink(linkDto1.id());
+        ).when(linkService).deleteLink(linkDto1.id(), user.getId());
 
         // Assert
         String linkDtoIdPath = TestDataFactory

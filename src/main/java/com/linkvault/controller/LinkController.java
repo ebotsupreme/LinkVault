@@ -73,9 +73,16 @@ public class LinkController {
     }
 
     @DeleteMapping(LinkEndpoints.BY_LINK_ID)
-    public ResponseEntity<Void> deleteLink(@PathVariable @Min(1) Long linkId) {
+    public ResponseEntity<Void> deleteLink(
+        @PathVariable @Min(1) Long linkId,
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
         info(log, "Deleting link by ID: {}", linkId);
-        linkService.deleteLink(linkId);
+
+        String username = userDetails.getUsername();
+        Long userId = userServiceImpl.getUserIdByUsername(username);
+
+        linkService.deleteLink(linkId, userId);
         return ResponseEntity.noContent().build();
     }
 

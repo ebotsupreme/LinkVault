@@ -102,7 +102,7 @@ public class LinkServiceImpl implements LinkService{
     }
 
     @Transactional
-    public void deleteLink(Long linkId) {
+    public void deleteLink(Long linkId, Long requestingUserId) {
         Link linkToDelete = linkRepository.findById(linkId)
             .orElseThrow(() -> new LinkNotFoundException(linkId));
         info(log, LogMessages.FOUND_LINK, linkId);
@@ -110,6 +110,14 @@ public class LinkServiceImpl implements LinkService{
         info(log, LogMessages.FETCH_USER, linkToDelete.getUser().getId());
         User user = userRepository.findById(linkToDelete.getUser().getId())
             .orElseThrow(() -> new UserNotFoundException(linkToDelete.getUser().getId()));
+
+        info(log, LogMessages.VALIDATE_USER, requestingUserId);
+        if (!user.getId().equals(requestingUserId)) {
+            throw new UnauthorizedAccessException(
+                "User not authorized to delete this link", requestingUserId
+            );
+        }
+
         LinkDto linkToDeleteDto = new LinkDto(
             linkToDelete.getId(), linkToDelete.getUrl(), linkToDelete.getTitle(),
             linkToDelete.getDescription(), linkToDelete.getUser().getId());

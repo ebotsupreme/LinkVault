@@ -195,7 +195,7 @@ public class LinkServiceTest {
         doNothing().when(linkRepository).deleteById(link1.getId());
 
         // Act
-        linkService.deleteLink(link1.getId());
+        linkService.deleteLink(link1.getId(), user.getId());
 
         // Assert
         verify(userRepository).findById(user.getId());
@@ -211,7 +211,7 @@ public class LinkServiceTest {
 
         // Act & Assert
         assertThrows(UserNotFoundException.class, () ->
-            linkService.deleteLink(link1.getId()));
+            linkService.deleteLink(link1.getId(), user.getId()));
     }
 
     @Test
@@ -221,7 +221,7 @@ public class LinkServiceTest {
 
         // Act & Assert
         assertThrows(LinkNotFoundException.class, () ->
-            linkService.deleteLink(linkDto2.id()));
+            linkService.deleteLink(linkDto2.id(), user.getId()));
     }
 
     @Test
@@ -234,7 +234,7 @@ public class LinkServiceTest {
 
         // Act & Assert
         assertThrows(LinkDeleteException.class, () ->
-            linkService.deleteLink(link2.getId()));
+            linkService.deleteLink(link2.getId(), user.getId()));
     }
 
     @Test

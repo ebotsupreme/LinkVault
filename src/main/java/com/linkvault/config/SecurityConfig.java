@@ -31,16 +31,6 @@ public class SecurityConfig {
         return new JwtAuthenticationFilter(jwtUtils, userDetailsService);
     }
 
-//    @Bean
-//    public UserDetailsService userDetailService(PasswordEncoder passwordEncoder) {
-//        var user = User.withUsername("user")
-//            .password(passwordEncoder.encode("password"))
-//            .roles("USER")
-//            .build();
-//
-//        return new InMemoryUserDetailsManager(user);
-//    }
-
     @Bean
     public UserDetailsService userDetailsService(UserRepository userRepository) {
         return new CustomUserDetailsService(userRepository);
