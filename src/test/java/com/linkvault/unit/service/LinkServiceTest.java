@@ -214,7 +214,6 @@ public class LinkServiceTest {
     @Test
     void shouldThrowExceptionWhenLinkDeleteFails() {
         // Arrange
-        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.of(link2));
         doThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
             .when(linkRepository).deleteById(link2.getId());

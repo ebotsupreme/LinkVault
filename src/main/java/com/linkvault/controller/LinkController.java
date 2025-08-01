@@ -2,7 +2,6 @@ package com.linkvault.controller;
 
 import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.dto.LinkDto;
-import com.linkvault.exception.LinkDeleteException;
 import com.linkvault.service.LinkService;
 import com.linkvault.service.UserServiceImpl;
 import jakarta.validation.Valid;
@@ -87,8 +86,13 @@ public class LinkController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping(LinkEndpoints.BY_USER)
-    public ResponseEntity<Void> deleteAllLinksByUser(@PathVariable @Min(1) Long userId) {
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAllLinksByUser(
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        String username = userDetails.getUsername();
+        Long userId = userServiceImpl.getUserIdByUsername(username);
+
         info(log, "Deleting links by user ID: {}", userId);
         linkService.deleteAllLinksByUser(userId);
         return ResponseEntity.noContent().build();
