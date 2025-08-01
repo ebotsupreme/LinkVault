@@ -164,4 +164,64 @@ public class LinkControllerIntegrationTest {
             .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken))
             .andExpect(status().isForbidden());
     }
+
+
+    @Test
+    void shouldReturnUnauthorizedForUser_WhenDeletingLinkWithoutAToken() throws Exception {
+        // Arrange
+        String jsonForUser = """
+            {
+                "username": "validUsername1",
+                "password": "validPassword1@"
+            }
+            """;
+
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUser))
+            .andExpect(status().isOk());
+
+        // Act & Assert
+        User user = userRepository.findByUsername("validUsername1").orElseThrow();
+
+        Link link1 = new Link("https://github.com", "Git Hub",
+            "Repositories", user);
+        linkRepository.save(link1);
+
+        String link1IdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, link1.getId());
+
+        mockMvc.perform(delete(link1IdPath))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldReturnUnauthorizedForUser_WhenDeletingLinkWithMalformedToken() throws Exception {
+        // Arrange
+        String jsonForUser = """
+            {
+                "username": "validUsername1",
+                "password": "validPassword1@"
+            }
+            """;
+
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUser))
+            .andExpect(status().isOk());
+
+        // Act & Assert
+        User user = userRepository.findByUsername("validUsername1").orElseThrow();
+
+        Link link1 = new Link("https://github.com", "Git Hub",
+            "Repositories", user);
+        linkRepository.save(link1);
+
+        String link1IdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, link1.getId());
+
+        mockMvc.perform(delete(link1IdPath)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + "malformed.token"))
+            .andExpect(status().isUnauthorized());
+    }
 }
