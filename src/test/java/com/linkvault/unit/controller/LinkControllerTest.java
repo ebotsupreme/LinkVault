@@ -254,36 +254,63 @@ public class LinkControllerTest extends AbstractValidationTest {
             .andExpect(jsonPath("$.message").value(
                 String.format(ExceptionMessages.LINK_DELETE_FAILED, linkDto1.url())
             ));
+
+        // Cleanup
+        SecurityContextHolder.clearContext();
     }
 
     @Test
     void shouldReturnNoContentStatusWhenAllLinksAreDeleted() throws Exception {
         // Arrange
+        when(userServiceImpl.getUserIdByUsername("eddie"))
+            .thenReturn(user.getId());
         doNothing().when(linkService).deleteAllLinksByUser(user.getId());
 
-        // Assert
-        String userIdPath = TestDataFactory
-            .buildUserEndpointWithId(TestConstants.USER_ID_PATH_VAR, user.getId());
+        // Setup fake auth
+        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+            "eddie",
+            "password123",
+            List.of(new SimpleGrantedAuthority(Role.USER.toString()))
+        );
+        UsernamePasswordAuthenticationToken auth =
+            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        mockMvc.perform(delete(userIdPath)).andExpect(status().isNoContent());
+        // Assert
+        mockMvc.perform(delete(LinkEndpoints.BASE_LINKS)).andExpect(status().isNoContent());
+
+        // Cleanup
+        SecurityContextHolder.clearContext();
     }
 
     @Test
     void shouldReturnServerErrorStatusWhenAllLinksFailToDelete() throws Exception {
         // Arrange
+        when(userServiceImpl.getUserIdByUsername("eddie"))
+            .thenReturn(user.getId());
         doThrow(new LinksDeleteException(user.getId(),
             new RuntimeException(ExceptionMessages.DATABASE_FAILURE)))
             .when(linkService).deleteAllLinksByUser(user.getId());
 
-        // Assert
-        String userIdPath = TestDataFactory
-            .buildUserEndpointWithId(TestConstants.USER_ID_PATH_VAR, user.getId());
+        // Setup fake auth
+        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+            "eddie",
+            "password123",
+            List.of(new SimpleGrantedAuthority(Role.USER.toString()))
+        );
+        UsernamePasswordAuthenticationToken auth =
+            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        mockMvc.perform(delete(userIdPath))
+        // Assert
+        mockMvc.perform(delete(LinkEndpoints.BASE_LINKS))
             .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.message").value(
                 String.format(ExceptionMessages.LINKS_DELETE_FAILED, user.getId())
             ));
+
+        // Cleanup
+        SecurityContextHolder.clearContext();
     }
 
     @ParameterizedTest

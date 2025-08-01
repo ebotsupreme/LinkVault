@@ -258,4 +258,15 @@ public class LinkControllerIntegrationTest {
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + "malformed.token"))
             .andExpect(status().isUnauthorized());
     }
+
+    // Example
+//    @Test
+//    void shouldReturnUnauthorized_WhenTokenIsExpired() throws Exception {
+//        // given: expired token manually constructed or mocked
+//        String expiredToken = jwtUtils.generateExpiredTokenFor("validUser");
+//
+//        mockMvc.perform(delete("/api/links")
+//                .header("Authorization", "Bearer " + expiredToken))
+//            .andExpect(status().isUnauthorized());
+//    }
 }
