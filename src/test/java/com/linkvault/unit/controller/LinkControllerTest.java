@@ -227,16 +227,29 @@ public class LinkControllerTest extends AbstractValidationTest {
     @Test
     void shouldReturnServerErrorStatusWhenLinkFailsToDelete() throws Exception {
         // Arrange
+        when(userServiceImpl.getUserIdByUsername("eddie"))
+            .thenReturn(user.getId());
         doThrow(
             new LinkDeleteException(linkDto1,
                 new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
         ).when(linkService).deleteLink(linkDto1.id(), user.getId());
 
+        // Setup fake auth
+        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+            "eddie",
+            "password123",
+            List.of(new SimpleGrantedAuthority(Role.USER.toString()))
+        );
+        UsernamePasswordAuthenticationToken auth =
+            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
         // Assert
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
 
-        mockMvc.perform(delete(linkDtoIdPath))
+        mockMvc.perform(delete(linkDtoIdPath)
+                .with(user(userDetails)))
             .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.message").value(
                 String.format(ExceptionMessages.LINK_DELETE_FAILED, linkDto1.url())

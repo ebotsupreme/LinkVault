@@ -2,6 +2,7 @@ package com.linkvault.controller;
 
 import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.dto.LinkDto;
+import com.linkvault.exception.LinkDeleteException;
 import com.linkvault.service.LinkService;
 import com.linkvault.service.UserServiceImpl;
 import jakarta.validation.Valid;
