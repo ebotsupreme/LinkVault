@@ -5,13 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.AuthEndpoints;
 import com.linkvault.exception.RegistrationFailedException;
 import com.linkvault.exception.UsernameAlreadyExistsException;
+import com.linkvault.integration.util.JwtTestTokenFactory;
 import com.linkvault.model.Role;
 import com.linkvault.model.User;
 import com.linkvault.repository.UserRepository;
 import com.linkvault.service.UserServiceImpl;
 import com.linkvault.unit.util.TestConstants;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -111,23 +110,13 @@ public class AuthIntegrationTest {
             .andExpect(status().isUnauthorized());
     }
 
-    private String generateToken(SecretKey key, Date now, Date expiryDate) {
-        JwtBuilder builder = Jwts.builder()
-            .claim("sub", AuthIntegrationTest.username)
-            .issuedAt((now))
-            .expiration(expiryDate)
-            .signWith(key);
-
-        return builder.compact();
-    }
-
     @Test
     void shouldReturn401_WhenTokenHasInvalidSignature() throws Exception {
         SecretKey otherKey = Keys.hmacShaKeyFor("invalid-secret-key-12345678901234567890".getBytes());
         Date now = new Date();
         Date expiryDate = new Date(System.currentTimeMillis() + 1000 * 60 * 10);
 
-        String token = generateToken(otherKey, now, expiryDate);
+        String token = JwtTestTokenFactory.generateToken(otherKey, now, expiryDate);
 
         mockMvc.perform(get(TestConstants.SECURE_TEST_ENDPOINT)
             .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token))
@@ -136,11 +125,7 @@ public class AuthIntegrationTest {
 
     @Test
     void shouldReturn401_WhenTokenHasExpired() throws Exception {
-        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
-        Date issuedTenMinutesAgo = new Date(System.currentTimeMillis() - 1000 * 60 * 10);
-        Date expiredFiveMinutesAgo = new Date(System.currentTimeMillis() - 1000 * 60 * 5);
-
-        String token = generateToken(key, issuedTenMinutesAgo, expiredFiveMinutesAgo);
+        String token = JwtTestTokenFactory.buildExpiredToken(jwtSecret);
 
         mockMvc.perform(get(TestConstants.SECURE_TEST_ENDPOINT)
             .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token))

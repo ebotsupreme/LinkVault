@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.AuthEndpoints;
 import com.linkvault.constants.apiPaths.LinkEndpoints;
+import com.linkvault.integration.util.JwtTestTokenFactory;
 import com.linkvault.model.Link;
 import com.linkvault.model.User;
 import com.linkvault.repository.LinkRepository;
@@ -13,6 +14,7 @@ import com.linkvault.unit.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -40,6 +42,9 @@ public class LinkControllerIntegrationTest {
 
     @Autowired
     private LinkRepository linkRepository;
+
+    @Value("${jwt.secret}")
+    private String jwtSecret;
 
     @BeforeEach()
     void setUp() {
@@ -259,14 +264,12 @@ public class LinkControllerIntegrationTest {
             .andExpect(status().isUnauthorized());
     }
 
-    // Example
-//    @Test
-//    void shouldReturnUnauthorized_WhenTokenIsExpired() throws Exception {
-//        // given: expired token manually constructed or mocked
-//        String expiredToken = jwtUtils.generateExpiredTokenFor("validUser");
-//
-//        mockMvc.perform(delete("/api/links")
-//                .header("Authorization", "Bearer " + expiredToken))
-//            .andExpect(status().isUnauthorized());
-//    }
+    @Test
+    void shouldReturnUnauthorized_WhenTokenIsExpired() throws Exception {
+        String expiredToken = JwtTestTokenFactory.buildExpiredToken(jwtSecret);
+
+        mockMvc.perform(delete(LinkEndpoints.BASE_LINKS)
+            .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + expiredToken))
+        .andExpect(status().isUnauthorized());
+    }
 }
