@@ -190,7 +190,6 @@ public class LinkServiceTest {
     @Test
     void shouldDeleteLinkForGivenUser() {
         // Arrange
-        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(linkRepository.findById(linkDto1.id())).thenReturn(Optional.of(link1));
         doNothing().when(linkRepository).deleteById(link1.getId());
 
@@ -198,20 +197,8 @@ public class LinkServiceTest {
         linkService.deleteLink(link1.getId(), user.getId());
 
         // Assert
-        verify(userRepository).findById(user.getId());
         verify(linkRepository).findById(linkDto1.id());
         verify(linkRepository).deleteById(link1.getId());
-    }
-
-    @Test
-    void shouldThrowExceptionWhenUserNotFoundDuringDelete() {
-        // Arrange
-        when(linkRepository.findById(linkDto1.id())).thenReturn(Optional.of(link1));
-        when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(UserNotFoundException.class, () ->
-            linkService.deleteLink(link1.getId(), user.getId()));
     }
 
     @Test

@@ -107,12 +107,11 @@ public class LinkServiceImpl implements LinkService{
             .orElseThrow(() -> new LinkNotFoundException(linkId));
         info(log, LogMessages.FOUND_LINK, linkId);
 
-        info(log, LogMessages.FETCH_USER, linkToDelete.getUser().getId());
-        User user = userRepository.findById(linkToDelete.getUser().getId())
-            .orElseThrow(() -> new UserNotFoundException(linkToDelete.getUser().getId()));
+        Long ownerId = linkToDelete.getUser().getId();
+        info(log, "Owner ID: {}", ownerId);
 
         info(log, LogMessages.VALIDATE_USER, requestingUserId);
-        if (!user.getId().equals(requestingUserId)) {
+        if (!ownerId.equals(requestingUserId)) {
             throw new UnauthorizedAccessException(
                 "User not authorized to delete this link", requestingUserId
             );
@@ -120,20 +119,14 @@ public class LinkServiceImpl implements LinkService{
 
         LinkDto linkToDeleteDto = new LinkDto(
             linkToDelete.getId(), linkToDelete.getUrl(), linkToDelete.getTitle(),
-            linkToDelete.getDescription(), linkToDelete.getUser().getId());
-
-        if (!linkToDelete.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedAccessException(
-                ExceptionMessages.USER_NOT_AUTHORIZED_TO_DELETE, user.getId()
-            );
-        }
+            linkToDelete.getDescription(), ownerId);
 
         try {
             info(log, "Deleting link ID: {}", linkId);
             debug(log, "Link to be deleted: {}", linkToDelete);
 
             linkRepository.deleteById(linkId);
-            info(log, "Successfully deleted link for user ID: {}", user.getId());
+            info(log, "Successfully deleted link for user ID: {}", ownerId);
         } catch (RuntimeException e) {
             throw new LinkDeleteException(linkToDeleteDto, e);
         }
