@@ -1,6 +1,5 @@
 package com.linkvault.integration.util;
 
-import com.linkvault.integration.auth.AuthIntegrationTest;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;

@@ -5,7 +5,6 @@ import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.controller.LinkController;
 import com.linkvault.dto.LinkDto;
 import com.linkvault.exception.*;
-import com.linkvault.model.Role;
 import com.linkvault.model.User;
 import com.linkvault.service.LinkService;
 import com.linkvault.service.UserServiceImpl;
@@ -22,10 +21,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -36,7 +32,6 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -68,6 +63,7 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnAllLinksForUserWhenUserHasLinks() throws Exception {
         // Arrange
         when(linkService.getAllLinksForUser(user.getId()))
@@ -75,24 +71,10 @@ public class LinkControllerTest extends AbstractValidationTest {
         when(userServiceImpl.getUserIdByUsername("eddie"))
             .thenReturn(user.getId());
 
-        // Setup fake auth
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-            "eddie",
-            "password123",
-            List.of(new SimpleGrantedAuthority(Role.USER.toString()))
-        );
-        UsernamePasswordAuthenticationToken auth =
-            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        mockMvc.perform(get("/api/links")
-            .with(user(userDetails)))
+        mockMvc.perform(get("/api/links"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].title").value(linkDto1.title()))
             .andExpect(jsonPath("$[1].title").value(linkDto2.title()));
-
-        // Cleanup
-        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -156,13 +138,15 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnLinkWhenLinkIsUpdated() throws Exception {
         // Arrange
         when(linkService.updateLink(linkDto1.id(),
-            linkDto1)).thenReturn(Optional.of(linkDto1));
-        String json = objectMapper.writeValueAsString(linkDto1);
+            linkDto1, user.getId())).thenReturn(Optional.of(linkDto1));
+        when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
 
-        // Assert
+        // Act & Assert
+        String json = objectMapper.writeValueAsString(linkDto1);
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
 
@@ -170,21 +154,24 @@ public class LinkControllerTest extends AbstractValidationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
             .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(linkDto1.id()))
             .andExpect(jsonPath("$.title").value(linkDto1.title()));
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnServerErrorStatusWhenLinkSaveFailsOnUpdate() throws Exception {
         // Arrange
-        when(linkService.updateLink(linkDto1.id(), linkDto1)).thenThrow(
+        when(linkService.updateLink(linkDto1.id(), linkDto1, user.getId())).thenThrow(
             new LinkSaveException(linkDto1,
                 new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
-        String json = objectMapper.writeValueAsString(linkDto1);
+        when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
 
-        // Assert
+        String json = objectMapper.writeValueAsString(linkDto1);
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
 
+        // Act & Assert
         mockMvc.perform(put(linkDtoIdPath)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
@@ -196,35 +183,23 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnNoContentStatusWhenLinkIsDeleted() throws Exception {
         // Arrange
         doNothing().when(linkService).deleteLink(linkDto1.id(), user.getId());
         when(userServiceImpl.getUserIdByUsername("eddie"))
             .thenReturn(user.getId());
 
-        // Setup fake auth
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-            "eddie",
-            "password123",
-            List.of(new SimpleGrantedAuthority(Role.USER.toString()))
-        );
-        UsernamePasswordAuthenticationToken auth =
-        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        // Assert
+        // Act & Assert
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
 
-        mockMvc.perform(delete(linkDtoIdPath)
-                .with(user(userDetails)))
+        mockMvc.perform(delete(linkDtoIdPath))
             .andExpect(status().isNoContent());
-
-        // Cleanup
-        SecurityContextHolder.clearContext();
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnServerErrorStatusWhenLinkFailsToDelete() throws Exception {
         // Arrange
         when(userServiceImpl.getUserIdByUsername("eddie"))
@@ -234,56 +209,31 @@ public class LinkControllerTest extends AbstractValidationTest {
                 new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
         ).when(linkService).deleteLink(linkDto1.id(), user.getId());
 
-        // Setup fake auth
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-            "eddie",
-            "password123",
-            List.of(new SimpleGrantedAuthority(Role.USER.toString()))
-        );
-        UsernamePasswordAuthenticationToken auth =
-            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
         // Assert
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
 
-        mockMvc.perform(delete(linkDtoIdPath)
-                .with(user(userDetails)))
+        mockMvc.perform(delete(linkDtoIdPath))
             .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.message").value(
                 String.format(ExceptionMessages.LINK_DELETE_FAILED, linkDto1.url())
             ));
-
-        // Cleanup
-        SecurityContextHolder.clearContext();
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnNoContentStatusWhenAllLinksAreDeleted() throws Exception {
         // Arrange
         when(userServiceImpl.getUserIdByUsername("eddie"))
             .thenReturn(user.getId());
         doNothing().when(linkService).deleteAllLinksByUser(user.getId());
 
-        // Setup fake auth
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-            "eddie",
-            "password123",
-            List.of(new SimpleGrantedAuthority(Role.USER.toString()))
-        );
-        UsernamePasswordAuthenticationToken auth =
-            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        // Assert
+        // Act & Assert
         mockMvc.perform(delete(LinkEndpoints.BASE_LINKS)).andExpect(status().isNoContent());
-
-        // Cleanup
-        SecurityContextHolder.clearContext();
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnServerErrorStatusWhenAllLinksFailToDelete() throws Exception {
         // Arrange
         when(userServiceImpl.getUserIdByUsername("eddie"))
@@ -292,25 +242,12 @@ public class LinkControllerTest extends AbstractValidationTest {
             new RuntimeException(ExceptionMessages.DATABASE_FAILURE)))
             .when(linkService).deleteAllLinksByUser(user.getId());
 
-        // Setup fake auth
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-            "eddie",
-            "password123",
-            List.of(new SimpleGrantedAuthority(Role.USER.toString()))
-        );
-        UsernamePasswordAuthenticationToken auth =
-            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        // Assert
+        // Act & Assert
         mockMvc.perform(delete(LinkEndpoints.BASE_LINKS))
             .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.message").value(
                 String.format(ExceptionMessages.LINKS_DELETE_FAILED, user.getId())
             ));
-
-        // Cleanup
-        SecurityContextHolder.clearContext();
     }
 
     @ParameterizedTest
@@ -507,24 +444,5 @@ public class LinkControllerTest extends AbstractValidationTest {
 
         ResultActions result = performJsonRequest(requestBuilder, jsonValid);
         assertValidationFailure(result, TestConstants.LINK_ID);
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {TestConstants.HTTP_GET, TestConstants.HTTP_DELETE})
-    void shouldReturnBadRequestWhenUserIdIsNegative(String method) throws Exception {
-        String linkDtoIdPath = TestDataFactory
-            .buildUserEndpointWithIncorrectId(
-                TestConstants.USER_ID_PATH_VAR, TestConstants.INVALID_USER_ID
-            );
-
-        MockHttpServletRequestBuilder requestBuilder = switch(method) {
-            case TestConstants.HTTP_GET -> get(linkDtoIdPath);
-            case TestConstants.HTTP_DELETE -> delete(linkDtoIdPath);
-            default -> throw new IllegalArgumentException(TestConstants.INVALID_METHOD);
-        };
-
-        ResultActions result = mockMvc.perform(requestBuilder
-            .contentType(MediaType.APPLICATION_JSON));
-        assertValidationFailure(result, TestConstants.USER_ID);
     }
 }

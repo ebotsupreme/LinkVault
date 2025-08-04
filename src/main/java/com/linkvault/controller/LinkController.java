@@ -60,14 +60,19 @@ public class LinkController {
     @PutMapping(LinkEndpoints.BY_LINK_ID)
     public ResponseEntity<LinkDto> updateLink(
         @PathVariable @Min(1) Long linkId,
-        @Valid @RequestBody LinkDto linkDto
+        @Valid @RequestBody LinkDto linkDto,
+        @AuthenticationPrincipal UserDetails userDetails
     ) {
         if (!linkId.equals(linkDto.id())) {
             warn(log, "Failed to update link by ID: {}", linkId);
             return ResponseEntity.badRequest().build();
         }
+
+        String username = userDetails.getUsername();
+        Long userId = userServiceImpl.getUserIdByUsername(username);
+
         info(log, "Updating link by ID: {}", linkId);
-        return linkService.updateLink(linkId, linkDto)
+        return linkService.updateLink(linkId, linkDto, userId)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }

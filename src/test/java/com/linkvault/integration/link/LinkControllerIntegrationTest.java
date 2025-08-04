@@ -160,8 +160,6 @@ public class LinkControllerIntegrationTest {
         JsonNode jsonNode = mapper.readTree(responseBody);
         String userAToken = jsonNode.get("token").asText();
 
-        userRepository.findByUsername("validUsername1").orElseThrow();
-
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, link1.getId());
 
@@ -169,7 +167,6 @@ public class LinkControllerIntegrationTest {
             .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken))
             .andExpect(status().isForbidden());
     }
-
 
     @Test
     void shouldReturnUnauthorizedForUser_WhenDeletingLinkWithoutAToken() throws Exception {
@@ -244,8 +241,6 @@ public class LinkControllerIntegrationTest {
         JsonNode jsonNode = mapper.readTree(responseBody);
         String userAToken = jsonNode.get("token").asText();
 
-        userRepository.findByUsername("validUsername1").orElseThrow();
-
         mockMvc.perform(delete(LinkEndpoints.BASE_LINKS)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken))
             .andExpect(status().isNotFound());
@@ -271,5 +266,96 @@ public class LinkControllerIntegrationTest {
         mockMvc.perform(delete(LinkEndpoints.BASE_LINKS)
             .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + expiredToken))
         .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldReturnForbidden_WhenUserTriesToUpdateAnotherUsersLink() throws Exception {
+        // Arrange
+        String jsonForUserA = """
+            {
+                "username": "validUsername1",
+                "password": "validPassword1@"
+            }
+            """;
+
+        String jsonForUserB = """
+            {
+                "username": "validUsername2",
+                "password": "validPassword2@"
+            }
+            """;
+
+        // Act & Assert
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserA))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserB))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserB))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").isNotEmpty())
+            .andReturn();
+
+        User userB = userRepository.findByUsername("validUsername2").orElseThrow();
+        Link link1 = new Link("https://github.com", "Git Hub",
+            "Repositories", userB);
+        linkRepository.save(link1);
+
+        String updateLinkJson = String.format("""
+            {
+                "id": %d,
+                "url": "https://updated.com",
+                "title": "Updated Title",
+                "description": "Updated Description",
+                "userId": %d
+            }
+            """, link1.getId(), userB.getId());
+
+        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserA))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").isNotEmpty())
+            .andReturn();
+
+        String responseBody = result.getResponse().getContentAsString();
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode = mapper.readTree(responseBody);
+        String userAToken = jsonNode.get("token").asText();
+
+        String link1IdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, link1.getId());
+
+        mockMvc.perform(put(link1IdPath)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateLinkJson))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldReturnUnauthorizedForUser_WhenUpdatingLinkWithoutAToken() throws Exception {
+        String link1IdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, 1L);
+
+        mockMvc.perform(put(link1IdPath))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldReturnUnauthorizedForUser_WhenUpdatingLinkWithMalformedToken() throws Exception {
+        String link1IdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, 1L);
+
+        mockMvc.perform(put(link1IdPath)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + "malformed.token"))
+            .andExpect(status().isUnauthorized());
     }
 }

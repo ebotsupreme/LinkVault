@@ -68,26 +68,25 @@ public class LinkServiceImpl implements LinkService{
     }
 
     @Transactional
-    public Optional<LinkDto> updateLink(Long linkId, LinkDto linkDto) {
-        info(log, LogMessages.FETCH_USER, linkDto.userId());
-        User user = userRepository.findById(linkDto.userId())
-            .orElseThrow(() -> new UserNotFoundException(linkDto.userId()));
-
+    public Optional<LinkDto> updateLink(Long linkId, LinkDto linkDto, Long requestingUserId) {
         Link existingLink = linkRepository.findById(linkId)
             .orElseThrow(() -> new LinkNotFoundException(linkId));
         info(log, LogMessages.FOUND_LINK, linkId);
+
+        Long ownerId = existingLink.getUser().getId();
+        info(log, "Owner ID: {}", ownerId);
+
+        info(log, LogMessages.VALIDATE_USER, requestingUserId);
+        if (!ownerId.equals(requestingUserId)) {
+            throw new UnauthorizedAccessException(
+                ExceptionMessages.USER_NOT_AUTHORIZED_TO_UPDATE, requestingUserId
+            );
+        }
 
         debug(log, "Received LinkDto for update: {}", linkDto);
         existingLink.setUrl(linkDto.url());
         existingLink.setTitle(linkDto.title());
         existingLink.setDescription(linkDto.description());
-        existingLink.setUser(user);
-
-        if (!existingLink.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedAccessException(
-                ExceptionMessages.USER_NOT_AUTHORIZED_TO_UPDATE, user.getId()
-            );
-        }
 
         try {
             info(log, "Updating link by ID: {}", existingLink.getId());
@@ -95,7 +94,7 @@ public class LinkServiceImpl implements LinkService{
 
             Link updatedLink = linkRepository.save(existingLink);
             info(log, "Link updated successfully: ID {}", existingLink.getId());
-            return Optional.of(LinkMapper.toDto(updatedLink, existingLink.getUser().getId()));
+            return Optional.of(LinkMapper.toDto(updatedLink, ownerId));
         } catch (RuntimeException e) {
             throw new LinkSaveException(linkDto, e);
         }

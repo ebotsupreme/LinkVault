@@ -128,7 +128,6 @@ public class LinkServiceTest {
     @Test
     void shouldUpdateLinkForGivenUser() {
         // Arrange
-        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(linkRepository.findById(link1.getId())).thenReturn(Optional.of(link1));
 
         // Simulate update
@@ -139,7 +138,7 @@ public class LinkServiceTest {
         when(linkRepository.save(any(Link.class))).thenReturn(link1);
 
         // Act
-        Optional<LinkDto> result = linkService.updateLink(link1.getId(), linkDto2);
+        Optional<LinkDto> result = linkService.updateLink(link1.getId(), linkDto2, user.getId());
 
         // Assert
         assertTrue(result.isPresent());
@@ -148,43 +147,30 @@ public class LinkServiceTest {
         assertEquals(link1.getTitle(), updated.title());
         assertEquals(link1.getDescription(), updated.description());
 
-        verify(userRepository).findById(user.getId());
         verify(linkRepository).findById(link1.getId());
         verify(linkRepository).save(link1);
     }
 
     @Test
-    void shouldThrowExceptionWhenUserNotFoundDuringUpdate() {
-        // Arrange
-        when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(UserNotFoundException.class, () ->
-            linkService.updateLink(link1.getId(), linkDto1));
-    }
-
-    @Test
     void shouldThrowExceptionWhenLinkNotFoundDuringUpdate() {
         // Arrange
-        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(LinkNotFoundException.class, () ->
-            linkService.updateLink(linkDto2.id(), linkDto2));
+            linkService.updateLink(linkDto2.id(), linkDto2, user.getId()));
     }
 
     @Test
     void shouldThrowExceptionWhenLinkSaveFailsDuringUpdate() {
         // Arrange
-        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.of(link2));
         when(linkRepository.save(any(Link.class)))
             .thenThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE));
 
         // Act & Assert
         assertThrows(LinkSaveException.class, () ->
-            linkService.updateLink(link2.getId(), linkDto2));
+            linkService.updateLink(link2.getId(), linkDto2, user.getId()));
     }
 
     @Test
