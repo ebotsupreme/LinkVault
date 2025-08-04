@@ -7,6 +7,7 @@ import com.linkvault.service.UserServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -50,9 +51,23 @@ public class LinkController {
     }
 
     @PostMapping
-    public ResponseEntity<LinkDto> createLink(@Valid @RequestBody LinkDto linkDto) {
-        info(log, "Creating link for user ID: {}", linkDto.userId());
-        return linkService.createLink(linkDto.userId(), linkDto)
+    public ResponseEntity<LinkDto> createLink(
+        @Valid @RequestBody LinkDto linkDto,
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        String username = userDetails.getUsername();
+        Long userId = userServiceImpl.getUserIdByUsername(username);
+
+        if (!userId.equals(linkDto.userId())) {
+            warn(
+                log, "User {} attempted to create link for user {}",
+                userId, linkDto.userId()
+            );
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        info(log, "Creating link for user ID: {}", userId);
+        return linkService.createLink(userId, linkDto)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
