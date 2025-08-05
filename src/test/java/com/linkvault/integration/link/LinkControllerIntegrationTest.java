@@ -152,6 +152,102 @@ public class LinkControllerIntegrationTest {
     }
 
     @Test
+    void shouldReturnForbidden_WhenUserTriesToFetchAnotherUsersLink() throws Exception {
+        // Arrange
+        String jsonForUserA = """
+            {
+                "username": "validUsername1",
+                "password": "validPassword1@"
+            }
+            """;
+
+        String jsonForUserB = """
+            {
+                "username": "validUsername2",
+                "password": "validPassword2@"
+            }
+            """;
+
+        // Act & Assert
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserA))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserB))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserB))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").isNotEmpty())
+            .andReturn();
+
+        User userB = userRepository.findByUsername("validUsername2").orElseThrow();
+        Link link1 = new Link("https://github.com", "Git Hub",
+            "Repositories", userB);
+        linkRepository.save(link1);
+
+        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserA))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").isNotEmpty())
+            .andReturn();
+
+        String responseBody = result.getResponse().getContentAsString();
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode = mapper.readTree(responseBody);
+        String userAToken = jsonNode.get("token").asText();
+
+        String link1IdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, link1.getId());
+
+        mockMvc.perform(get(link1IdPath)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldReturnNotFound_WhenUserFetchesALinkThatDoesntExist() throws Exception {
+        // Arrange
+        String jsonForUserA = """
+            {
+                "username": "validUsername1",
+                "password": "validPassword1@"
+            }
+            """;
+
+        // Act & Assert
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserA))
+            .andExpect(status().isOk());
+
+        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserA))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").isNotEmpty())
+            .andReturn();
+
+        String responseBody = result.getResponse().getContentAsString();
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode = mapper.readTree(responseBody);
+        String userAToken = jsonNode.get("token").asText();
+
+        String link1IdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, 999999999L);
+
+        mockMvc.perform(get(link1IdPath)
+            .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
     void shouldReturnUnauthorizedForUser_WhenFetchingLinkWithoutAToken() throws Exception {
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, 1L);
