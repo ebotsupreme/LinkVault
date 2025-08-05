@@ -78,9 +78,11 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnLinkWhenIdExists() throws Exception {
         // Arrange
-        when(linkService.getLinkById(linkDto1.id())).thenReturn(Optional.of(linkDto1));
+        when(linkService.getLinkById(linkDto1.id(), user.getId())).thenReturn(Optional.of(linkDto1));
+        when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
 
         // Assert
         mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkDto1.id()))
@@ -89,11 +91,13 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnNotFoundStatusWhenLinkDoesNotExist() throws Exception {
         // Arrange
-        when(linkService.getLinkById(linkDto1.id()))
+        when(linkService.getLinkById(linkDto1.id(), user.getId()))
             .thenThrow(new LinkNotFoundException(linkDto1.id(),
                 new RuntimeException()));
+        when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
 
         // Assert
         mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkDto1.id()))
@@ -104,13 +108,16 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnLinkWhenNewLinkIsCreated() throws Exception {
         // Arrange
         when(linkService.createLink(user.getId(), linkDto2))
             .thenReturn(Optional.of(linkDto2));
+        when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
+
+        // Act & Assert
         String json = objectMapper.writeValueAsString(linkDto2);
 
-        // Assert
         mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
@@ -119,14 +126,17 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnServerErrorStatusWhenLinkSaveFails() throws Exception {
         // Arrange
         when(linkService.createLink(user.getId(), linkDto2)).thenThrow(
             new LinkSaveException(linkDto2,
                 new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
+        when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
+
+        // Act & Assert
         String json = objectMapper.writeValueAsString(linkDto2);
 
-        // Assert
         mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))

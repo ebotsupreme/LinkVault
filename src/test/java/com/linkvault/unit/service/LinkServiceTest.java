@@ -69,7 +69,7 @@ public class LinkServiceTest {
         when(linkRepository.findById(link1.getId())).thenReturn(Optional.of(link1));
 
         // Act
-        Optional<LinkDto> result = linkService.getLinkById(link1.getId());
+        Optional<LinkDto> result = linkService.getLinkById(link1.getId(), user.getId());
 
         // Assert
         assertTrue(result.isPresent());
@@ -84,7 +84,8 @@ public class LinkServiceTest {
         when(linkRepository.findById(link2.getId())).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(LinkNotFoundException.class, () -> linkService.getLinkById(link2.getId()));
+        assertThrows(LinkNotFoundException.class, () ->
+            linkService.getLinkById(link2.getId(), user.getId()));
     }
 
     @Test

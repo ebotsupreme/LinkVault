@@ -33,7 +33,8 @@ public class LinkController {
 
     @GetMapping
     public ResponseEntity<List<LinkDto>> getAllLinksForUser(
-        @AuthenticationPrincipal UserDetails userDetails) {
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
 
         String username = userDetails.getUsername();
         Long userId = userServiceImpl.getUserIdByUsername(username);
@@ -43,9 +44,15 @@ public class LinkController {
     }
 
     @GetMapping(LinkEndpoints.BY_LINK_ID)
-    public ResponseEntity<LinkDto> getLinkById(@PathVariable @Min(1) Long linkId) {
+    public ResponseEntity<LinkDto> getLinkById(
+        @PathVariable @Min(1) Long linkId,
+        @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        String username = userDetails.getUsername();
+        Long userId = userServiceImpl.getUserIdByUsername(username);
+
         info(log, "Getting link by ID: {}", linkId);
-        return linkService.getLinkById(linkId)
+        return linkService.getLinkById(linkId, userId)
             .map(ResponseEntity::ok)
             .orElseGet(()-> ResponseEntity.notFound().build());
     }

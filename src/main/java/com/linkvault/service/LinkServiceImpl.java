@@ -39,12 +39,22 @@ public class LinkServiceImpl implements LinkService{
     }
 
     @Transactional(readOnly = true)
-    public Optional<LinkDto> getLinkById(Long linkId) {
+    public Optional<LinkDto> getLinkById(Long linkId, Long requestingUserId) {
         info(log,"Fetching link by ID: {}", linkId);
         Link link = linkRepository.findById(linkId)
            .orElseThrow(() -> new LinkNotFoundException(linkId));
-        info(log, LogMessages.FOUND_LINK, linkId);
 
+        Long ownerId = link.getUser().getId();
+        info(log, "Owner ID: {}", ownerId);
+
+        info(log, LogMessages.VALIDATE_USER, requestingUserId);
+        if (!ownerId.equals(requestingUserId)) {
+            throw new UnauthorizedAccessException(
+                "User not authorized to fetch this link", requestingUserId
+            );
+        }
+
+        info(log, LogMessages.FOUND_LINK, link.getId());
        return Optional.of(LinkMapper.toDto(link, link.getUser().getId()));
     }
 
