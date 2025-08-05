@@ -35,7 +35,6 @@ public class LinkController {
     public ResponseEntity<List<LinkDto>> getAllLinksForUser(
         @AuthenticationPrincipal UserDetails userDetails
     ) {
-
         String username = userDetails.getUsername();
         Long userId = userServiceImpl.getUserIdByUsername(username);
 

@@ -96,6 +96,66 @@ public class LinkControllerIntegrationTest {
     }
 
     @Test
+    void shouldReturnOkWithEmptyList_WhenUserHasNoOwnedLinks() throws Exception {
+        // Arrange
+        String jsonForUserA = """
+            {
+                "username": "validUsername1",
+                "password": "validPassword1@"
+            }
+            """;
+
+        String jsonForUserB = """
+            {
+                "username": "validUsername2",
+                "password": "validPassword2@"
+            }
+            """;
+
+        // Act & Assert
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserA))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserB))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserB))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").isNotEmpty())
+            .andReturn();
+
+        User userB = userRepository.findByUsername("validUsername2").orElseThrow();
+        Link link1 = new Link("https://github.com", "Git Hub",
+            "Repositories", userB);
+        Link link2 = new Link("https://spring.io", "Spring Boot",
+            "Learning Spring Boot", userB);
+        linkRepository.saveAll(List.of(link1, link2));
+
+        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserA))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").isNotEmpty())
+            .andReturn();
+
+        String responseBody = result.getResponse().getContentAsString();
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode = mapper.readTree(responseBody);
+        String userAToken = jsonNode.get("token").asText();
+
+        mockMvc.perform(get(LinkEndpoints.BASE_LINKS)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
     void shouldReturnUnauthorizedForUser_WhenFetchingLinksWithoutAToken() throws Exception {
         mockMvc.perform(get(LinkEndpoints.BASE_LINKS))
             .andExpect(status().isUnauthorized());
