@@ -63,7 +63,16 @@ public class LinkServiceImpl implements LinkService{
         info(log, LogMessages.FETCH_USER, userId);
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
+
+        info(log, LogMessages.VALIDATE_USER, userId);
+        if (!userId.equals(linkDto.userId())) {
+            throw new UnauthorizedAccessException(
+                "User not authorized to fetch this link", userId
+            );
+        }
+
         Link link = new Link(linkDto.url(), linkDto.title(), linkDto.description(), user);
+        info(log, LogMessages.FOUND_LINK, link.getId());
 
         try {
             info(log, "Saving link for user ID: {}", userId);

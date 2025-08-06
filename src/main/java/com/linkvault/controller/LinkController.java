@@ -64,14 +64,6 @@ public class LinkController {
         String username = userDetails.getUsername();
         Long userId = userServiceImpl.getUserIdByUsername(username);
 
-        if (!userId.equals(linkDto.userId())) {
-            warn(
-                log, "User {} attempted to create link for user {}",
-                userId, linkDto.userId()
-            );
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
         info(log, "Creating link for user ID: {}", userId);
         return linkService.createLink(userId, linkDto)
             .map(ResponseEntity::ok)
