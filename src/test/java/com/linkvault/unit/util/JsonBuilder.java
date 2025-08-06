@@ -1,4 +1,4 @@
-package com.linkvault.util;
+package com.linkvault.unit.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

@@ -1,4 +1,4 @@
-package com.linkvault.LinkControllerTest;
+package com.linkvault.unit.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.LinkEndpoints;
@@ -7,10 +7,11 @@ import com.linkvault.dto.LinkDto;
 import com.linkvault.exception.*;
 import com.linkvault.model.User;
 import com.linkvault.service.LinkService;
-import com.linkvault.util.AbstractValidationTest;
-import com.linkvault.util.JsonBuilder;
-import com.linkvault.util.TestConstants;
-import com.linkvault.util.TestDataFactory;
+import com.linkvault.service.UserServiceImpl;
+import com.linkvault.unit.util.AbstractValidationTest;
+import com.linkvault.unit.util.JsonBuilder;
+import com.linkvault.unit.util.TestConstants;
+import com.linkvault.unit.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -20,6 +21,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -38,11 +40,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class LinkControllerTest extends AbstractValidationTest {
     @Autowired
     private MockMvc mockMvc;
+
     @MockitoBean
     private LinkService linkService;
-    private User user;
+
+    @MockitoBean
+    private UserServiceImpl userServiceImpl;
+
     @Autowired
     private ObjectMapper objectMapper;
+
+    private User user;
     private LinkDto linkDto1;
     private LinkDto linkDto2;
 
@@ -55,25 +63,26 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnAllLinksForUserWhenUserHasLinks() throws Exception {
         // Arrange
         when(linkService.getAllLinksForUser(user.getId()))
             .thenReturn(List.of(linkDto1, linkDto2));
+        when(userServiceImpl.getUserIdByUsername("eddie"))
+            .thenReturn(user.getId());
 
-        // Assert
-        String userIdPath = TestDataFactory
-            .buildUserEndpointWithId(TestConstants.USER_ID_PATH_VAR, user.getId());
-
-        mockMvc.perform(get(userIdPath))
+        mockMvc.perform(get("/api/links"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].title").value(linkDto1.title()))
             .andExpect(jsonPath("$[1].title").value(linkDto2.title()));
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnLinkWhenIdExists() throws Exception {
         // Arrange
-        when(linkService.getLinkById(linkDto1.id())).thenReturn(Optional.of(linkDto1));
+        when(linkService.getLinkById(linkDto1.id(), user.getId())).thenReturn(Optional.of(linkDto1));
+        when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
 
         // Assert
         mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkDto1.id()))
@@ -82,11 +91,13 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnNotFoundStatusWhenLinkDoesNotExist() throws Exception {
         // Arrange
-        when(linkService.getLinkById(linkDto1.id()))
+        when(linkService.getLinkById(linkDto1.id(), user.getId()))
             .thenThrow(new LinkNotFoundException(linkDto1.id(),
                 new RuntimeException()));
+        when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
 
         // Assert
         mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkDto1.id()))
@@ -97,13 +108,16 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnLinkWhenNewLinkIsCreated() throws Exception {
         // Arrange
         when(linkService.createLink(user.getId(), linkDto2))
             .thenReturn(Optional.of(linkDto2));
+        when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
+
+        // Act & Assert
         String json = objectMapper.writeValueAsString(linkDto2);
 
-        // Assert
         mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
@@ -112,14 +126,17 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnServerErrorStatusWhenLinkSaveFails() throws Exception {
         // Arrange
         when(linkService.createLink(user.getId(), linkDto2)).thenThrow(
             new LinkSaveException(linkDto2,
                 new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
+        when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
+
+        // Act & Assert
         String json = objectMapper.writeValueAsString(linkDto2);
 
-        // Assert
         mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
@@ -131,13 +148,15 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnLinkWhenLinkIsUpdated() throws Exception {
         // Arrange
         when(linkService.updateLink(linkDto1.id(),
-            linkDto1)).thenReturn(Optional.of(linkDto1));
-        String json = objectMapper.writeValueAsString(linkDto1);
+            linkDto1, user.getId())).thenReturn(Optional.of(linkDto1));
+        when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
 
-        // Assert
+        // Act & Assert
+        String json = objectMapper.writeValueAsString(linkDto1);
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
 
@@ -145,21 +164,24 @@ public class LinkControllerTest extends AbstractValidationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
             .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(linkDto1.id()))
             .andExpect(jsonPath("$.title").value(linkDto1.title()));
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnServerErrorStatusWhenLinkSaveFailsOnUpdate() throws Exception {
         // Arrange
-        when(linkService.updateLink(linkDto1.id(), linkDto1)).thenThrow(
+        when(linkService.updateLink(linkDto1.id(), linkDto1, user.getId())).thenThrow(
             new LinkSaveException(linkDto1,
                 new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
-        String json = objectMapper.writeValueAsString(linkDto1);
+        when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
 
-        // Assert
+        String json = objectMapper.writeValueAsString(linkDto1);
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
 
+        // Act & Assert
         mockMvc.perform(put(linkDtoIdPath)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
@@ -171,24 +193,31 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnNoContentStatusWhenLinkIsDeleted() throws Exception {
         // Arrange
-        doNothing().when(linkService).deleteLink(linkDto1.id());
+        doNothing().when(linkService).deleteLink(linkDto1.id(), user.getId());
+        when(userServiceImpl.getUserIdByUsername("eddie"))
+            .thenReturn(user.getId());
 
-        // Assert
+        // Act & Assert
         String linkDtoIdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
 
-        mockMvc.perform(delete(linkDtoIdPath)).andExpect(status().isNoContent());
+        mockMvc.perform(delete(linkDtoIdPath))
+            .andExpect(status().isNoContent());
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnServerErrorStatusWhenLinkFailsToDelete() throws Exception {
         // Arrange
+        when(userServiceImpl.getUserIdByUsername("eddie"))
+            .thenReturn(user.getId());
         doThrow(
             new LinkDeleteException(linkDto1,
                 new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
-        ).when(linkService).deleteLink(linkDto1.id());
+        ).when(linkService).deleteLink(linkDto1.id(), user.getId());
 
         // Assert
         String linkDtoIdPath = TestDataFactory
@@ -202,29 +231,29 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnNoContentStatusWhenAllLinksAreDeleted() throws Exception {
         // Arrange
+        when(userServiceImpl.getUserIdByUsername("eddie"))
+            .thenReturn(user.getId());
         doNothing().when(linkService).deleteAllLinksByUser(user.getId());
 
-        // Assert
-        String userIdPath = TestDataFactory
-            .buildUserEndpointWithId(TestConstants.USER_ID_PATH_VAR, user.getId());
-
-        mockMvc.perform(delete(userIdPath)).andExpect(status().isNoContent());
+        // Act & Assert
+        mockMvc.perform(delete(LinkEndpoints.BASE_LINKS)).andExpect(status().isNoContent());
     }
 
     @Test
+    @WithMockUser(username = "eddie")
     void shouldReturnServerErrorStatusWhenAllLinksFailToDelete() throws Exception {
         // Arrange
+        when(userServiceImpl.getUserIdByUsername("eddie"))
+            .thenReturn(user.getId());
         doThrow(new LinksDeleteException(user.getId(),
             new RuntimeException(ExceptionMessages.DATABASE_FAILURE)))
             .when(linkService).deleteAllLinksByUser(user.getId());
 
-        // Assert
-        String userIdPath = TestDataFactory
-            .buildUserEndpointWithId(TestConstants.USER_ID_PATH_VAR, user.getId());
-
-        mockMvc.perform(delete(userIdPath))
+        // Act & Assert
+        mockMvc.perform(delete(LinkEndpoints.BASE_LINKS))
             .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.message").value(
                 String.format(ExceptionMessages.LINKS_DELETE_FAILED, user.getId())
@@ -425,24 +454,5 @@ public class LinkControllerTest extends AbstractValidationTest {
 
         ResultActions result = performJsonRequest(requestBuilder, jsonValid);
         assertValidationFailure(result, TestConstants.LINK_ID);
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {TestConstants.HTTP_GET, TestConstants.HTTP_DELETE})
-    void shouldReturnBadRequestWhenUserIdIsNegative(String method) throws Exception {
-        String linkDtoIdPath = TestDataFactory
-            .buildUserEndpointWithIncorrectId(
-                TestConstants.USER_ID_PATH_VAR, TestConstants.INVALID_USER_ID
-            );
-
-        MockHttpServletRequestBuilder requestBuilder = switch(method) {
-            case TestConstants.HTTP_GET -> get(linkDtoIdPath);
-            case TestConstants.HTTP_DELETE -> delete(linkDtoIdPath);
-            default -> throw new IllegalArgumentException(TestConstants.INVALID_METHOD);
-        };
-
-        ResultActions result = mockMvc.perform(requestBuilder
-            .contentType(MediaType.APPLICATION_JSON));
-        assertValidationFailure(result, TestConstants.USER_ID);
     }
 }

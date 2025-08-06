@@ -1,4 +1,4 @@
-package com.linkvault.util;
+package com.linkvault.unit.util;
 
 import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.dto.LinkDto;
@@ -44,15 +44,5 @@ public class TestDataFactory {
     public static String buildLinkEndpointWithId(String path, Long linkDtoId) {
         return LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
             .replace(path, linkDtoId.toString());
-    }
-
-    public static String buildUserEndpointWithId(String path, Long userId) {
-        return LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_USER
-            .replace(path, userId.toString());
-    }
-
-    public static String buildUserEndpointWithIncorrectId(String path, Long userId) {
-        return LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_USER
-            .replace(path, String.valueOf(userId));
     }
 }

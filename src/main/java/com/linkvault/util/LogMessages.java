@@ -7,4 +7,6 @@ public class LogMessages
     public static final String FOUND_LINK = "Found link by ID: {}";
     public static final String DELETE_LINK_FAILED = "Link deletion failed: {}";
     public static final String STACK_TRACE = "Stack trace: ";
+
+    public static final String VALIDATE_USER = "Validating user by ID: {}";
 }

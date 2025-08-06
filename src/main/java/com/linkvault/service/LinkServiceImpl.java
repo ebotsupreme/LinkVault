@@ -39,12 +39,22 @@ public class LinkServiceImpl implements LinkService{
     }
 
     @Transactional(readOnly = true)
-    public Optional<LinkDto> getLinkById(Long linkId) {
+    public Optional<LinkDto> getLinkById(Long linkId, Long requestingUserId) {
         info(log,"Fetching link by ID: {}", linkId);
         Link link = linkRepository.findById(linkId)
            .orElseThrow(() -> new LinkNotFoundException(linkId));
-        info(log, LogMessages.FOUND_LINK, linkId);
 
+        Long ownerId = link.getUser().getId();
+        info(log, "Owner ID: {}", ownerId);
+
+        info(log, LogMessages.VALIDATE_USER, requestingUserId);
+        if (!ownerId.equals(requestingUserId)) {
+            throw new UnauthorizedAccessException(
+                "User not authorized to fetch this link", requestingUserId
+            );
+        }
+
+        info(log, LogMessages.FOUND_LINK, link.getId());
        return Optional.of(LinkMapper.toDto(link, link.getUser().getId()));
     }
 
@@ -53,7 +63,16 @@ public class LinkServiceImpl implements LinkService{
         info(log, LogMessages.FETCH_USER, userId);
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
+
+        info(log, LogMessages.VALIDATE_USER, userId);
+        if (!userId.equals(linkDto.userId())) {
+            throw new UnauthorizedAccessException(
+                "User not authorized to fetch this link", userId
+            );
+        }
+
         Link link = new Link(linkDto.url(), linkDto.title(), linkDto.description(), user);
+        info(log, LogMessages.FOUND_LINK, link.getId());
 
         try {
             info(log, "Saving link for user ID: {}", userId);
@@ -68,26 +87,25 @@ public class LinkServiceImpl implements LinkService{
     }
 
     @Transactional
-    public Optional<LinkDto> updateLink(Long linkId, LinkDto linkDto) {
-        info(log, LogMessages.FETCH_USER, linkDto.userId());
-        User user = userRepository.findById(linkDto.userId())
-            .orElseThrow(() -> new UserNotFoundException(linkDto.userId()));
-
+    public Optional<LinkDto> updateLink(Long linkId, LinkDto linkDto, Long requestingUserId) {
         Link existingLink = linkRepository.findById(linkId)
             .orElseThrow(() -> new LinkNotFoundException(linkId));
         info(log, LogMessages.FOUND_LINK, linkId);
+
+        Long ownerId = existingLink.getUser().getId();
+        info(log, "Owner ID: {}", ownerId);
+
+        info(log, LogMessages.VALIDATE_USER, requestingUserId);
+        if (!ownerId.equals(requestingUserId)) {
+            throw new UnauthorizedAccessException(
+                ExceptionMessages.USER_NOT_AUTHORIZED_TO_UPDATE, requestingUserId
+            );
+        }
 
         debug(log, "Received LinkDto for update: {}", linkDto);
         existingLink.setUrl(linkDto.url());
         existingLink.setTitle(linkDto.title());
         existingLink.setDescription(linkDto.description());
-        existingLink.setUser(user);
-
-        if (!existingLink.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedAccessException(
-                ExceptionMessages.USER_NOT_AUTHORIZED_TO_UPDATE, user.getId()
-            );
-        }
 
         try {
             info(log, "Updating link by ID: {}", existingLink.getId());
@@ -95,37 +113,38 @@ public class LinkServiceImpl implements LinkService{
 
             Link updatedLink = linkRepository.save(existingLink);
             info(log, "Link updated successfully: ID {}", existingLink.getId());
-            return Optional.of(LinkMapper.toDto(updatedLink, existingLink.getUser().getId()));
+            return Optional.of(LinkMapper.toDto(updatedLink, ownerId));
         } catch (RuntimeException e) {
             throw new LinkSaveException(linkDto, e);
         }
     }
 
     @Transactional
-    public void deleteLink(Long linkId) {
+    public void deleteLink(Long linkId, Long requestingUserId) {
         Link linkToDelete = linkRepository.findById(linkId)
             .orElseThrow(() -> new LinkNotFoundException(linkId));
         info(log, LogMessages.FOUND_LINK, linkId);
 
-        info(log, LogMessages.FETCH_USER, linkToDelete.getUser().getId());
-        User user = userRepository.findById(linkToDelete.getUser().getId())
-            .orElseThrow(() -> new UserNotFoundException(linkToDelete.getUser().getId()));
-        LinkDto linkToDeleteDto = new LinkDto(
-            linkToDelete.getId(), linkToDelete.getUrl(), linkToDelete.getTitle(),
-            linkToDelete.getDescription(), linkToDelete.getUser().getId());
+        Long ownerId = linkToDelete.getUser().getId();
+        info(log, "Owner ID: {}", ownerId);
 
-        if (!linkToDelete.getUser().getId().equals(user.getId())) {
+        info(log, LogMessages.VALIDATE_USER, requestingUserId);
+        if (!ownerId.equals(requestingUserId)) {
             throw new UnauthorizedAccessException(
-                ExceptionMessages.USER_NOT_AUTHORIZED_TO_DELETE, user.getId()
+                "User not authorized to delete this link", requestingUserId
             );
         }
+
+        LinkDto linkToDeleteDto = new LinkDto(
+            linkToDelete.getId(), linkToDelete.getUrl(), linkToDelete.getTitle(),
+            linkToDelete.getDescription(), ownerId);
 
         try {
             info(log, "Deleting link ID: {}", linkId);
             debug(log, "Link to be deleted: {}", linkToDelete);
 
             linkRepository.deleteById(linkId);
-            info(log, "Successfully deleted link for user ID: {}", user.getId());
+            info(log, "Successfully deleted link for user ID: {}", ownerId);
         } catch (RuntimeException e) {
             throw new LinkDeleteException(linkToDeleteDto, e);
         }

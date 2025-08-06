@@ -1,5 +1,6 @@
-package com.linkvault.security;
+package com.linkvault.unit.security;
 
+import com.linkvault.security.JwtUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
