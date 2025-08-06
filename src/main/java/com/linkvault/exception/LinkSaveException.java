@@ -1,9 +1,9 @@
 package com.linkvault.exception;
 
-import com.linkvault.dto.LinkDto;
+import com.linkvault.dto.LinkRequest;
 
 public class LinkSaveException extends RuntimeException {
-    public LinkSaveException(LinkDto linkDto, Throwable cause) {
-        super(String.format(ExceptionMessages.LINK_SAVE_FAILED, linkDto.url()), cause);
+    public LinkSaveException(Long userId, LinkRequest linkRequest, Throwable cause) {
+        super(String.format(ExceptionMessages.LINK_SAVE_FAILED, userId, linkRequest.url()), cause);
     }
 }

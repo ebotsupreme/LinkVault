@@ -3,7 +3,7 @@ package com.linkvault.unit.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.controller.LinkController;
-import com.linkvault.dto.LinkDto;
+import com.linkvault.dto.LinkResponse;
 import com.linkvault.exception.*;
 import com.linkvault.model.User;
 import com.linkvault.service.LinkService;
@@ -12,6 +12,7 @@ import com.linkvault.unit.util.AbstractValidationTest;
 import com.linkvault.unit.util.JsonBuilder;
 import com.linkvault.unit.util.TestConstants;
 import com.linkvault.unit.util.TestDataFactory;
+import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -51,14 +52,15 @@ public class LinkControllerTest extends AbstractValidationTest {
     private ObjectMapper objectMapper;
 
     private User user;
-    private LinkDto linkDto1;
-    private LinkDto linkDto2;
+    private LinkResponse linkResponseOne;
+    private LinkResponse linkResponseTwo;
+
 
     @BeforeEach
     void setUp() {
         user = TestDataFactory.createTestUser();
-        linkDto1 = TestDataFactory.createLinkDto1();
-        linkDto2 = TestDataFactory.createLinkDto2();
+        linkResponseOne = TestDataFactory.createLinkResponseOne();
+        linkResponseTwo = TestDataFactory.createLinkResponseTwo();
         setMockMvc(mockMvc);
     }
 
@@ -66,44 +68,64 @@ public class LinkControllerTest extends AbstractValidationTest {
     @WithMockUser(username = "eddie")
     void shouldReturnAllLinksForUserWhenUserHasLinks() throws Exception {
         // Arrange
-        when(linkService.getAllLinksForUser(user.getId()))
-            .thenReturn(List.of(linkDto1, linkDto2));
         when(userServiceImpl.getUserIdByUsername("eddie"))
             .thenReturn(user.getId());
+        when(linkService.getAllLinksForUser(user.getId()))
+            .thenReturn(List.of(linkResponseOne, linkResponseTwo));
 
         mockMvc.perform(get("/api/links"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].title").value(linkDto1.title()))
-            .andExpect(jsonPath("$[1].title").value(linkDto2.title()));
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].title").value(linkResponseOne.title()))
+            .andExpect(jsonPath("$[1].title").value(linkResponseTwo.title()))
+            .andExpect(jsonPath("$[0].url").value(linkResponseOne.url()))
+            .andExpect(jsonPath("$[1].url").value(linkResponseTwo.url()));
+    }
+
+    @Test
+    @WithMockUser(username = "eddie")
+    void shouldReturnEmptyListWhenUserHasNoLinks() throws Exception {
+        // Arrange
+        when(userServiceImpl.getUserIdByUsername("eddie"))
+            .thenReturn(user.getId());
+        when(linkService.getAllLinksForUser(user.getId()))
+            .thenReturn(List.of(linkResponseOne, linkResponseTwo));
+
+        mockMvc.perform(get("/api/links"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$", hasSize(0)))
+            .andExpect(content().json("[]"));
     }
 
     @Test
     @WithMockUser(username = "eddie")
     void shouldReturnLinkWhenIdExists() throws Exception {
         // Arrange
-        when(linkService.getLinkById(linkDto1.id(), user.getId())).thenReturn(Optional.of(linkDto1));
+        when(linkService.getLinkById(linkResponseOne.id(), user.getId())).thenReturn(Optional.of(linkResponseOne));
         when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
 
         // Assert
-        mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkDto1.id()))
+        mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkResponseOne.id()))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.title").value(linkDto1.title()));
+            .andExpect(jsonPath("$.title").value(linkResponseOne.title()));
     }
 
     @Test
     @WithMockUser(username = "eddie")
     void shouldReturnNotFoundStatusWhenLinkDoesNotExist() throws Exception {
         // Arrange
-        when(linkService.getLinkById(linkDto1.id(), user.getId()))
-            .thenThrow(new LinkNotFoundException(linkDto1.id(),
+        when(linkService.getLinkById(linkResponseOne.id(), user.getId()))
+            .thenThrow(new LinkNotFoundException(linkResponseOne.id(),
                 new RuntimeException()));
         when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
 
         // Assert
-        mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkDto1.id()))
+        mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkResponseOne.id()))
             .andExpect(jsonPath("$.status").value(HttpStatus.NOT_FOUND.value()))
             .andExpect(jsonPath("$.message")
-                .value(String.format(ExceptionMessages.LINK_NOT_FOUND, linkDto1.id())
+                .value(String.format(ExceptionMessages.LINK_NOT_FOUND, linkResponseOne.id())
                 ));
     }
 

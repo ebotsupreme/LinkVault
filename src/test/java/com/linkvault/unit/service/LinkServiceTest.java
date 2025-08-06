@@ -1,6 +1,6 @@
 package com.linkvault.unit.service;
 
-import com.linkvault.dto.LinkDto;
+import com.linkvault.dto.LinkResponse;
 import com.linkvault.exception.*;
 import com.linkvault.model.Link;
 import com.linkvault.model.User;
@@ -34,8 +34,9 @@ public class LinkServiceTest {
     private User user;
     private Link link1;
     private Link link2;
-    private LinkDto linkDto1;
-    private LinkDto linkDto2;
+
+    private LinkResponse linkResponseOne;
+    private LinkResponse linkResponseTwo;
 
     @BeforeEach
     void setUp() {
@@ -43,22 +44,26 @@ public class LinkServiceTest {
         user = TestDataFactory.createTestUser();
         link1 = TestDataFactory.createLink1();
         link2 = TestDataFactory.createLink2();
-        linkDto1 = TestDataFactory.createLinkDto1();
-        linkDto2 = TestDataFactory.createLinkDto2();
+        linkResponseOne = TestDataFactory.createLinkResponseOne();
+        linkResponseTwo = TestDataFactory.createLinkResponseTwo();
     }
 
     @Test
-    void shouldReturnListOfLinkDtosWhenUserHasLinks() {
+    void shouldReturnListOfLinkResponsesWhenUserHasLinks() {
         // Arrange
         when(linkRepository.findByUserId(user.getId())).thenReturn(List.of(link1, link2));
 
         // Act
-        List<LinkDto> result = linkService.getAllLinksForUser(user.getId());
+        List<LinkResponse> result = linkService.getAllLinksForUser(user.getId());
 
         // Assert
         assertEquals(2, result.size());
-        assertEquals(link1.getTitle(), result.get(0).title());
+        assertEquals(link1.getTitle(), result.getFirst().title());
+        assertEquals(link1.getUrl(), result.getFirst().url());
+        assertEquals(link1.getUser().getId(), result.getFirst().userId());
+
         assertEquals(link2.getTitle(), result.get(1).title());
+        assertEquals(link1.getUrl(), result.get(1).url());
 
         verify(linkRepository).findByUserId(user.getId());
     }
