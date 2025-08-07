@@ -23,11 +23,6 @@ public class JsonBuilder {
         return this;
     }
 
-    public JsonBuilder withoutField(String fieldName) {
-        fields.remove(fieldName);
-        return this;
-    }
-
     public String build() throws Exception {
         try {
             return new ObjectMapper().writeValueAsString(fields);

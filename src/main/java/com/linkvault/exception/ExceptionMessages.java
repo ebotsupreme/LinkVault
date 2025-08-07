@@ -5,7 +5,7 @@ public class ExceptionMessages {
     public static final String LINK_NOT_FOUND = "Link with ID %d not found.";
     public static final String LINKS_NOT_FOUND = "Links not found for user ID: %d.";
 
-    public static final String LINK_SAVE_FAILED = "Failed to save link for user ID: %d. URL: %s";
+    public static final String LINK_SAVE_FAILED = "Failed to save link ID: %d for user ID: %d";
     public static final String LINK_DELETE_FAILED = "Failed to delete link ID: %d for user ID: %d";
     public static final String LINKS_DELETE_FAILED = "Failed to delete all links for user ID: %d";
 

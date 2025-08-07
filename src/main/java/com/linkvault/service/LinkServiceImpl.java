@@ -74,7 +74,7 @@ public class LinkServiceImpl implements LinkService{
             info(log, "Link saved successfully: ID {}", savedLink.getId());
             return LinkMapper.toResponse(savedLink);
         } catch (RuntimeException e) {
-            throw new LinkSaveException(userId, linkRequest, e);
+            throw new LinkSaveException(link.getId(), userId, e);
         }
     }
 
@@ -107,7 +107,7 @@ public class LinkServiceImpl implements LinkService{
             info(log, "Link updated successfully: ID {}", existingLink.getId());
             return LinkMapper.toResponse(updatedLink);
         } catch (RuntimeException e) {
-            throw new LinkSaveException(ownerId, linkRequest, e);
+            throw new LinkSaveException(existingLink.getId(), ownerId, e);
         }
     }
 

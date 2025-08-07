@@ -51,4 +51,9 @@ public class TestDataFactory {
         return new LinkRequest("https://github.com",
             "Git Hub", "Repositories");
     }
+
+    public static LinkRequest createLinkRequestTwo() {
+        return new LinkRequest("https://spring.io",
+            "Spring Boot", "Learning Spring Boot");
+    }
 }

@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -406,7 +407,7 @@ public class LinkControllerIntegrationTest {
     }
 
     @Test
-    void shouldReturnNotFound_WhenUserTriesToDeleteLinksTheyDoNotOwn() throws Exception {
+    void shouldReturnNoContent_WhenUserTriesToDeleteEmptyLinkList() throws Exception {
         // Arrange
         String jsonForUserA = """
             {
@@ -415,37 +416,11 @@ public class LinkControllerIntegrationTest {
             }
             """;
 
-        String jsonForUserB = """
-            {
-                "username": "validUsername2",
-                "password": "validPassword2@"
-            }
-            """;
-
         // Act & Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonForUserA))
             .andExpect(status().isOk());
-
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserB))
-            .andExpect(status().isOk());
-
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserB))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
-
-        User userB = userRepository.findByUsername("validUsername2").orElseThrow();
-        Link link1 = new Link("https://github.com", "Git Hub",
-            "Repositories", userB);
-        Link link2 = new Link("https://spring.io", "Spring Boot",
-            "Learning Spring Boot", userB);
-        linkRepository.saveAll(List.of(link1, link2));
 
         MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -461,7 +436,7 @@ public class LinkControllerIntegrationTest {
 
         mockMvc.perform(delete(LinkEndpoints.BASE_LINKS)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isNoContent());
     }
 
     @Test
@@ -531,10 +506,9 @@ public class LinkControllerIntegrationTest {
                 "id": %d,
                 "url": "https://updated.com",
                 "title": "Updated Title",
-                "description": "Updated Description",
-                "userId": %d
+                "description": "Updated Description"
             }
-            """, link1.getId(), userB.getId());
+            """, link1.getId());
 
         MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -578,7 +552,7 @@ public class LinkControllerIntegrationTest {
     }
 
     @Test
-    void shouldReturnForbidden_WhenUserTriesToCreateAnotherUsersLink() throws Exception {
+    void shouldIgnoreUserIdInRequest_AndCreateLinkForAuthenticatedUser() throws Exception {
         // Arrange
         String jsonForUserA = """
             {
@@ -605,25 +579,6 @@ public class LinkControllerIntegrationTest {
                 .content(jsonForUserB))
             .andExpect(status().isOk());
 
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserB))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
-
-        User userB = userRepository.findByUsername("validUsername2").orElseThrow();
-
-        String createLinkJson = String.format("""
-            {
-                "id": %d,
-                "url": "https://github.com",
-                "title": "Git Hub",
-                "description": "Repositories",
-                "userId": %d
-            }
-            """, 1L, userB.getId());
-
         MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonForUserA))
@@ -636,11 +591,30 @@ public class LinkControllerIntegrationTest {
         JsonNode jsonNode = mapper.readTree(responseBody);
         String userAToken = jsonNode.get("token").asText();
 
+
+        User userB = userRepository.findByUsername("validUsername2").orElseThrow();
+
+        String maliciousJson = String.format("""
+            {
+                "url": "https://githack.com",
+                "title": "Git Hack",
+                "description": "Trying to assign to userB",
+                "userId": %d
+            }
+            """, userB.getId());
+
+
         mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(createLinkJson))
-            .andExpect(status().isForbidden());
+                .content(maliciousJson))
+            .andExpect(status().isCreated());
+
+        User userA = userRepository.findByUsername("validUsername1").orElseThrow();
+
+        List<Link> links = linkRepository.findByUserId(userA.getId());
+        assertThat(links).hasSize(1);
+        assertThat(links.getFirst().getUser().getId()).isEqualTo(userA.getId());
     }
 
     @Test

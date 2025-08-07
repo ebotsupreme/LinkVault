@@ -2,10 +2,8 @@ package com.linkvault.unit.util;
 
 public class TestConstants {
     public static final String LINK_ID_PATH_VAR = "{linkId}";
-    public static final String USER_ID_PATH_VAR = "{userId}";
 
     public static final String LINK_ID = "linkId";
-    public static final String USER_ID = "userId";
     public static final String URL = "url";
     public static final String TITLE = "title";
     public static final String DESCRIPTION = "description";

@@ -168,7 +168,7 @@ public class LinkControllerTest extends AbstractValidationTest {
         // Arrange
         when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
         when(linkService.createLink(user.getId(), linkRequest)).thenThrow(
-            new LinkSaveException(user.getId(), linkRequest,
+            new LinkSaveException(linkResponse.id(), user.getId(),
                 new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
 
         // Act & Assert
@@ -181,7 +181,7 @@ public class LinkControllerTest extends AbstractValidationTest {
             .andExpect(jsonPath("$.status")
                 .value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
             .andExpect(jsonPath("$.message")
-                .value(String.format(ExceptionMessages.LINK_SAVE_FAILED, user.getId() ,linkRequest.url())
+                .value(String.format(ExceptionMessages.LINK_SAVE_FAILED, linkResponse.id(), user.getId())
                 ));
 
         verify(linkService).createLink(user.getId(), linkRequest);
@@ -220,7 +220,7 @@ public class LinkControllerTest extends AbstractValidationTest {
         // Arrange
         when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
         when(linkService.updateLink(linkResponse.id(), linkRequest, user.getId())).thenThrow(
-            new LinkSaveException(user.getId(), linkRequest,
+            new LinkSaveException(linkResponse.id(), user.getId(),
                 new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
 
         String json = objectMapper.writeValueAsString(linkRequest);
@@ -236,11 +236,26 @@ public class LinkControllerTest extends AbstractValidationTest {
                 .value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
             .andExpect(jsonPath("$.message")
                 .value(String.format(
-                        ExceptionMessages.LINK_SAVE_FAILED, user.getId(), linkRequest.url()
+                        ExceptionMessages.LINK_SAVE_FAILED, linkResponse.id(), user.getId()
                     )
                 ));
 
         verify(linkService).updateLink(linkResponse.id(), linkRequest, user.getId());
+    }
+
+    @Test
+    @WithMockUser(username = "eddie")
+    void shouldReturnBadRequestWhenLinkRequestInvalid() throws Exception {
+        LinkRequest invalidRequest = new LinkRequest("", "", "");
+        String json = objectMapper.writeValueAsString(invalidRequest);
+
+        String linkIdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkResponse.id());
+
+        mockMvc.perform(put(linkIdPath)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isBadRequest());
     }
 
     @Test

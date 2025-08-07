@@ -1,5 +1,6 @@
 package com.linkvault.unit.service;
 
+import com.linkvault.dto.LinkRequest;
 import com.linkvault.dto.LinkResponse;
 import com.linkvault.exception.*;
 import com.linkvault.model.Link;
@@ -12,6 +13,7 @@ import com.linkvault.unit.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -35,8 +37,8 @@ public class LinkServiceTest {
     private Link link1;
     private Link link2;
 
-    private LinkResponse linkResponseOne;
-    private LinkResponse linkResponseTwo;
+    private LinkRequest linkRequest;
+    private LinkRequest linkRequestTwo;
 
     @BeforeEach
     void setUp() {
@@ -44,8 +46,8 @@ public class LinkServiceTest {
         user = TestDataFactory.createTestUser();
         link1 = TestDataFactory.createLink1();
         link2 = TestDataFactory.createLink2();
-        linkResponseOne = TestDataFactory.createLinkResponseOne();
-        linkResponseTwo = TestDataFactory.createLinkResponseTwo();
+        linkRequest = TestDataFactory.createLinkRequest();
+        linkRequestTwo = TestDataFactory.createLinkRequestTwo();
     }
 
     @Test
@@ -63,22 +65,22 @@ public class LinkServiceTest {
         assertEquals(link1.getUser().getId(), result.getFirst().userId());
 
         assertEquals(link2.getTitle(), result.get(1).title());
-        assertEquals(link1.getUrl(), result.get(1).url());
+        assertEquals(link2.getUrl(), result.get(1).url());
 
         verify(linkRepository).findByUserId(user.getId());
     }
 
     @Test
-    void shouldReturnLinkDtoWhenIdExists() {
+    void shouldReturnLinkWhenIdExists() {
         // Arrange
         when(linkRepository.findById(link1.getId())).thenReturn(Optional.of(link1));
 
         // Act
-        Optional<LinkDto> result = linkService.getLinkById(link1.getId(), user.getId());
+        LinkResponse result = linkService.getLinkById(link1.getId(), user.getId());
 
         // Assert
-        assertTrue(result.isPresent());
-        assertEquals(link1.getTitle(), result.get().title());
+        assertNotNull(result);
+        assertEquals(link1.getTitle(), result.title());
 
         verify(linkRepository).findById(link1.getId());
     }
@@ -91,6 +93,8 @@ public class LinkServiceTest {
         // Act & Assert
         assertThrows(LinkNotFoundException.class, () ->
             linkService.getLinkById(link2.getId(), user.getId()));
+
+        verify(linkRepository).findById(link2.getId());
     }
 
     @Test
@@ -100,12 +104,11 @@ public class LinkServiceTest {
         when(linkRepository.save(any(Link.class))).thenReturn(link1);
 
         // Act
-        Optional<LinkDto> result = linkService.createLink(user.getId(), linkDto1);
+        LinkResponse result = linkService.createLink(user.getId(), linkRequest);
 
         // Assert
-        assertTrue(result.isPresent());
-        LinkDto created = result.get();
-        assertEquals(link1.getTitle(), created.title());
+        assertNotNull(result);
+        assertEquals(link1.getTitle(), result.title());
 
         verify(userRepository).findById(user.getId());
         verify(linkRepository).save(any(Link.class));
@@ -117,7 +120,9 @@ public class LinkServiceTest {
         when(userRepository.findById(TEST_ID3)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(UserNotFoundException.class, () -> linkService.createLink(TEST_ID3, linkDto1));
+        assertThrows(UserNotFoundException.class, () -> linkService.createLink(TEST_ID3, linkRequest));
+
+        verify(userRepository).findById(TEST_ID3);
     }
 
     @Test
@@ -128,103 +133,105 @@ public class LinkServiceTest {
             .thenThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE));
 
         // Act & Assert
-        assertThrows(LinkSaveException.class, () -> linkService.createLink(user.getId(), linkDto1));
+        assertThrows(LinkSaveException.class, () -> linkService.createLink(user.getId(), linkRequest));
+
+        verify(userRepository).findById(user.getId());
+        verify(linkRepository).save(any(Link.class));
     }
 
     @Test
     void shouldUpdateLinkForGivenUser() {
         // Arrange
         when(linkRepository.findById(link1.getId())).thenReturn(Optional.of(link1));
-
-        // Simulate update
-        link1.setUrl(linkDto2.url());
-        link1.setTitle(linkDto2.title());
-        link1.setDescription(linkDto2.description());
-
-        when(linkRepository.save(any(Link.class))).thenReturn(link1);
+        when(linkRepository.save(any(Link.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        Optional<LinkDto> result = linkService.updateLink(link1.getId(), linkDto2, user.getId());
+        LinkResponse result = linkService.updateLink(link1.getId(), linkRequestTwo, user.getId());
 
         // Assert
-        assertTrue(result.isPresent());
-        LinkDto updated = result.get();
-        assertEquals(link1.getUrl(), updated.url());
-        assertEquals(link1.getTitle(), updated.title());
-        assertEquals(link1.getDescription(), updated.description());
+        assertNotNull(result);
+        assertEquals(linkRequestTwo.url(), result.url());
+        assertEquals(linkRequestTwo.title(), result.title());
+        assertEquals(linkRequestTwo.description(), result.description());
 
         verify(linkRepository).findById(link1.getId());
-        verify(linkRepository).save(link1);
+
+        ArgumentCaptor<Link> captor = ArgumentCaptor.forClass(Link.class);
+        verify(linkRepository).save(captor.capture());
+
+        Link savedLink = captor.getValue();
+        assertEquals(linkRequestTwo.url(), savedLink.getUrl());
+        assertEquals(linkRequestTwo.title(), savedLink.getTitle());
+        assertEquals(linkRequestTwo.description(), savedLink.getDescription());
     }
 
     @Test
     void shouldThrowExceptionWhenLinkNotFoundDuringUpdate() {
         // Arrange
-        when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.empty());
+        when(linkRepository.findById(link2.getId())).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(LinkNotFoundException.class, () ->
-            linkService.updateLink(linkDto2.id(), linkDto2, user.getId()));
+            linkService.updateLink(link2.getId(), linkRequestTwo, user.getId()));
+
+        verify(linkRepository).findById(link2.getId());
     }
 
     @Test
     void shouldThrowExceptionWhenLinkSaveFailsDuringUpdate() {
         // Arrange
-        when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.of(link2));
+        when(linkRepository.findById(link2.getId())).thenReturn(Optional.of(link2));
         when(linkRepository.save(any(Link.class)))
             .thenThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE));
 
         // Act & Assert
         assertThrows(LinkSaveException.class, () ->
-            linkService.updateLink(link2.getId(), linkDto2, user.getId()));
-    }
+            linkService.updateLink(link2.getId(), linkRequestTwo, user.getId()));
 
-//    @Test
-//    @WithMockUser(username = "eddie")
-//    void shouldReturnBadRequestWhenLinkRequestInvalid() throws Exception {
-//        LinkRequest invalidRequest = new LinkRequest("", "", ""); // Invalid URL
-//        String json = objectMapper.writeValueAsString(invalidRequest);
-//
-//        mockMvc.perform(put("/api/links/1")
-//                .contentType(MediaType.APPLICATION_JSON)
-//                .content(json))
-//            .andExpect(status().isBadRequest());
-//    }
+        verify(linkRepository).findById(link2.getId());
+        verify(linkRepository).save(any(Link.class));
+    }
 
     @Test
     void shouldDeleteLinkForGivenUser() {
         // Arrange
-        when(linkRepository.findById(linkDto1.id())).thenReturn(Optional.of(link1));
+        when(linkRepository.findById(link1.getId())).thenReturn(Optional.of(link1));
         doNothing().when(linkRepository).deleteById(link1.getId());
 
         // Act
         linkService.deleteLink(link1.getId(), user.getId());
 
         // Assert
-        verify(linkRepository).findById(linkDto1.id());
+        verify(linkRepository).findById(link1.getId());
         verify(linkRepository).deleteById(link1.getId());
     }
 
     @Test
     void shouldThrowExceptionWhenLinkNotFoundDuringDelete() {
         // Arrange
-        when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.empty());
+        when(linkRepository.findById(link2.getId())).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(LinkNotFoundException.class, () ->
-            linkService.deleteLink(linkDto2.id(), user.getId()));
+            linkService.deleteLink(link2.getId(), user.getId()));
+
+        verify(linkRepository).findById(link2.getId());
     }
 
     @Test
     void shouldThrowExceptionWhenLinkDeleteFails() {
         // Arrange
-        when(linkRepository.findById(linkDto2.id())).thenReturn(Optional.of(link2));
+        when(linkRepository.findById(link2.getId())).thenReturn(Optional.of(link2));
         doThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
             .when(linkRepository).deleteById(link2.getId());
 
         // Act & Assert
         assertThrows(LinkDeleteException.class, () ->
             linkService.deleteLink(link2.getId(), user.getId()));
+
+        verify(linkRepository).findById(link2.getId());
+        verify(linkRepository).deleteById(link2.getId());
     }
 
     @Test
@@ -243,25 +250,30 @@ public class LinkServiceTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenLinksNotFoundDuringDeleteAll() {
+    void shouldReturnSilentlyWhenNoLinksToDelete() {
         // Arrange
         when(linkRepository.findByUserId(user.getId())).thenReturn(List.of());
 
         // Act & Assert
-        assertThrows(LinksNotFoundException.class, () ->
-            linkService.deleteAllLinksByUser(user.getId()));
+        linkService.deleteAllLinksByUser(user.getId());
+
+        verify(linkRepository).findByUserId(user.getId());
+        verify(linkRepository, never()).deleteAll(any());
     }
 
     @Test
-    void shouldThrowExceptionWhenDeleteAllLFails() {
+    void shouldThrowExceptionWhenDeleteAllFails() {
         // Arrange
-        List<Link> linksToDelete = new ArrayList<>(List.of(link1, link2));
-        when(linkRepository.findByUserId(user.getId())).thenReturn(linksToDelete);
+        List<Link> linkList = new ArrayList<>(List.of(link1, link2));
+        when(linkRepository.findByUserId(user.getId())).thenReturn(linkList);
         doThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
-            .when(linkRepository).deleteAll(linksToDelete);
+            .when(linkRepository).deleteAll(linkList);
 
         // Act & Assert
         assertThrows(LinksDeleteException.class, () ->
             linkService.deleteAllLinksByUser(user.getId()));
+
+        verify(linkRepository).findByUserId(user.getId());
+        verify(linkRepository).deleteAll(linkList);
     }
 }
