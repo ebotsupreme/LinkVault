@@ -134,7 +134,7 @@ public class LinkServiceImpl implements LinkService{
             linkRepository.deleteById(linkId);
             info(log, "Successfully deleted link for user ID: {}", ownerId);
         } catch (RuntimeException e) {
-            throw new LinkDeleteException(linkId, e);
+            throw new LinkDeleteException(linkId, ownerId, e);
         }
     }
 

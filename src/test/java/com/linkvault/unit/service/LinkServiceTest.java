@@ -179,6 +179,18 @@ public class LinkServiceTest {
             linkService.updateLink(link2.getId(), linkDto2, user.getId()));
     }
 
+//    @Test
+//    @WithMockUser(username = "eddie")
+//    void shouldReturnBadRequestWhenLinkRequestInvalid() throws Exception {
+//        LinkRequest invalidRequest = new LinkRequest("", "", ""); // Invalid URL
+//        String json = objectMapper.writeValueAsString(invalidRequest);
+//
+//        mockMvc.perform(put("/api/links/1")
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .content(json))
+//            .andExpect(status().isBadRequest());
+//    }
+
     @Test
     void shouldDeleteLinkForGivenUser() {
         // Arrange

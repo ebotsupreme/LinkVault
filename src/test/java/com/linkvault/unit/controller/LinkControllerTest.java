@@ -3,6 +3,7 @@ package com.linkvault.unit.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.controller.LinkController;
+import com.linkvault.dto.LinkRequest;
 import com.linkvault.dto.LinkResponse;
 import com.linkvault.exception.*;
 import com.linkvault.model.User;
@@ -12,7 +13,6 @@ import com.linkvault.unit.util.AbstractValidationTest;
 import com.linkvault.unit.util.JsonBuilder;
 import com.linkvault.unit.util.TestConstants;
 import com.linkvault.unit.util.TestDataFactory;
-import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -28,8 +28,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
@@ -52,15 +52,17 @@ public class LinkControllerTest extends AbstractValidationTest {
     private ObjectMapper objectMapper;
 
     private User user;
-    private LinkResponse linkResponseOne;
+    private LinkResponse linkResponse;
     private LinkResponse linkResponseTwo;
+    private LinkRequest linkRequest;
 
 
     @BeforeEach
     void setUp() {
         user = TestDataFactory.createTestUser();
-        linkResponseOne = TestDataFactory.createLinkResponseOne();
+        linkResponse = TestDataFactory.createLinkResponse();
         linkResponseTwo = TestDataFactory.createLinkResponseTwo();
+        linkRequest = TestDataFactory.createLinkRequest();
         setMockMvc(mockMvc);
     }
 
@@ -71,16 +73,18 @@ public class LinkControllerTest extends AbstractValidationTest {
         when(userServiceImpl.getUserIdByUsername("eddie"))
             .thenReturn(user.getId());
         when(linkService.getAllLinksForUser(user.getId()))
-            .thenReturn(List.of(linkResponseOne, linkResponseTwo));
+            .thenReturn(List.of(linkResponse, linkResponseTwo));
 
         mockMvc.perform(get("/api/links"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$", hasSize(2)))
-            .andExpect(jsonPath("$[0].title").value(linkResponseOne.title()))
+            .andExpect(jsonPath("$[0].title").value(linkResponse.title()))
             .andExpect(jsonPath("$[1].title").value(linkResponseTwo.title()))
-            .andExpect(jsonPath("$[0].url").value(linkResponseOne.url()))
+            .andExpect(jsonPath("$[0].url").value(linkResponse.url()))
             .andExpect(jsonPath("$[1].url").value(linkResponseTwo.url()));
+
+        verify(linkService).getAllLinksForUser(user.getId());
     }
 
     @Test
@@ -90,144 +94,170 @@ public class LinkControllerTest extends AbstractValidationTest {
         when(userServiceImpl.getUserIdByUsername("eddie"))
             .thenReturn(user.getId());
         when(linkService.getAllLinksForUser(user.getId()))
-            .thenReturn(List.of(linkResponseOne, linkResponseTwo));
+            .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/links"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$", hasSize(0)))
             .andExpect(content().json("[]"));
+
+        verify(linkService).getAllLinksForUser(user.getId());
     }
 
     @Test
     @WithMockUser(username = "eddie")
     void shouldReturnLinkWhenIdExists() throws Exception {
         // Arrange
-        when(linkService.getLinkById(linkResponseOne.id(), user.getId())).thenReturn(Optional.of(linkResponseOne));
         when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
+        when(linkService.getLinkById(linkResponse.id(), user.getId())).thenReturn(linkResponse);
 
         // Assert
-        mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkResponseOne.id()))
+        mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkResponse.id()))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.title").value(linkResponseOne.title()));
+            .andExpect(jsonPath("$.title").value(linkResponse.title()))
+            .andExpect(jsonPath("$.url").value(linkResponse.url()));
+
+        verify(linkService).getLinkById(linkResponse.id(), user.getId());
     }
 
+    // TODO: Start here
     @Test
     @WithMockUser(username = "eddie")
     void shouldReturnNotFoundStatusWhenLinkDoesNotExist() throws Exception {
         // Arrange
-        when(linkService.getLinkById(linkResponseOne.id(), user.getId()))
-            .thenThrow(new LinkNotFoundException(linkResponseOne.id(),
-                new RuntimeException()));
         when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
+        when(linkService.getLinkById(linkResponse.id(), user.getId()))
+            .thenThrow(new LinkNotFoundException(linkResponse.id(),
+                new RuntimeException()));
 
         // Assert
-        mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkResponseOne.id()))
+        mockMvc.perform(get(LinkEndpoints.BASE_LINKS + "/" + linkResponse.id()))
+            .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.status").value(HttpStatus.NOT_FOUND.value()))
             .andExpect(jsonPath("$.message")
-                .value(String.format(ExceptionMessages.LINK_NOT_FOUND, linkResponseOne.id())
+                .value(String.format(ExceptionMessages.LINK_NOT_FOUND, linkResponse.id())
                 ));
+
+        verify(linkService).getLinkById(linkResponse.id(), user.getId());
     }
 
     @Test
     @WithMockUser(username = "eddie")
     void shouldReturnLinkWhenNewLinkIsCreated() throws Exception {
         // Arrange
-        when(linkService.createLink(user.getId(), linkDto2))
-            .thenReturn(Optional.of(linkDto2));
         when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
+        when(linkService.createLink(user.getId(), linkRequest))
+            .thenReturn(linkResponse);
 
         // Act & Assert
-        String json = objectMapper.writeValueAsString(linkDto2);
+        String json = objectMapper.writeValueAsString(linkRequest);
 
         mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.title").value(linkDto2.title()));
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.title").value(linkResponse.title()));
+
+        verify(linkService).createLink(user.getId(), linkRequest);
     }
 
     @Test
     @WithMockUser(username = "eddie")
     void shouldReturnServerErrorStatusWhenLinkSaveFails() throws Exception {
         // Arrange
-        when(linkService.createLink(user.getId(), linkDto2)).thenThrow(
-            new LinkSaveException(linkDto2,
-                new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
         when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
+        when(linkService.createLink(user.getId(), linkRequest)).thenThrow(
+            new LinkSaveException(user.getId(), linkRequest,
+                new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
 
         // Act & Assert
-        String json = objectMapper.writeValueAsString(linkDto2);
+        String json = objectMapper.writeValueAsString(linkRequest);
 
         mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
+            .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.status")
                 .value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
             .andExpect(jsonPath("$.message")
-                .value(String.format(ExceptionMessages.LINK_SAVE_FAILED, linkDto2.url())
+                .value(String.format(ExceptionMessages.LINK_SAVE_FAILED, user.getId() ,linkRequest.url())
                 ));
+
+        verify(linkService).createLink(user.getId(), linkRequest);
     }
 
     @Test
     @WithMockUser(username = "eddie")
     void shouldReturnLinkWhenLinkIsUpdated() throws Exception {
         // Arrange
-        when(linkService.updateLink(linkDto1.id(),
-            linkDto1, user.getId())).thenReturn(Optional.of(linkDto1));
         when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
+        when(linkService.updateLink(
+            linkResponse.id(),
+            linkRequest,
+            user.getId()
+        )).thenReturn(linkResponse);
 
         // Act & Assert
-        String json = objectMapper.writeValueAsString(linkDto1);
-        String linkDtoIdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
+        String json = objectMapper.writeValueAsString(linkRequest);
+        String linkIdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkResponse.id());
 
-        mockMvc.perform(put(linkDtoIdPath)
+        mockMvc.perform(put(linkIdPath)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(linkDto1.id()))
-            .andExpect(jsonPath("$.title").value(linkDto1.title()));
+            .andExpect(jsonPath("$.id").value(linkResponse.id()))
+            .andExpect(jsonPath("$.title").value(linkResponse.title()))
+            .andExpect(jsonPath("$.url").value(linkResponse.url()));
+
+        verify(linkService).updateLink(linkResponse.id(), linkRequest, user.getId());
     }
 
     @Test
     @WithMockUser(username = "eddie")
     void shouldReturnServerErrorStatusWhenLinkSaveFailsOnUpdate() throws Exception {
         // Arrange
-        when(linkService.updateLink(linkDto1.id(), linkDto1, user.getId())).thenThrow(
-            new LinkSaveException(linkDto1,
-                new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
         when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
+        when(linkService.updateLink(linkResponse.id(), linkRequest, user.getId())).thenThrow(
+            new LinkSaveException(user.getId(), linkRequest,
+                new RuntimeException(ExceptionMessages.DATABASE_FAILURE)));
 
-        String json = objectMapper.writeValueAsString(linkDto1);
-        String linkDtoIdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
+        String json = objectMapper.writeValueAsString(linkRequest);
+        String linkIdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkResponse.id());
 
         // Act & Assert
-        mockMvc.perform(put(linkDtoIdPath)
+        mockMvc.perform(put(linkIdPath)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
+            .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.status")
                 .value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
             .andExpect(jsonPath("$.message")
-                .value(String.format(ExceptionMessages.LINK_SAVE_FAILED, linkDto1.url())
+                .value(String.format(
+                        ExceptionMessages.LINK_SAVE_FAILED, user.getId(), linkRequest.url()
+                    )
                 ));
+
+        verify(linkService).updateLink(linkResponse.id(), linkRequest, user.getId());
     }
 
     @Test
     @WithMockUser(username = "eddie")
     void shouldReturnNoContentStatusWhenLinkIsDeleted() throws Exception {
         // Arrange
-        doNothing().when(linkService).deleteLink(linkDto1.id(), user.getId());
-        when(userServiceImpl.getUserIdByUsername("eddie"))
-            .thenReturn(user.getId());
+        when(userServiceImpl.getUserIdByUsername("eddie")).thenReturn(user.getId());
+        doNothing().when(linkService).deleteLink(linkResponse.id(), user.getId());
 
         // Act & Assert
-        String linkDtoIdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
+        String linkIdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkResponse.id());
 
-        mockMvc.perform(delete(linkDtoIdPath))
+        mockMvc.perform(delete(linkIdPath))
             .andExpect(status().isNoContent());
+
+        verify(linkService).deleteLink(linkResponse.id(), user.getId());
     }
 
     @Test
@@ -237,18 +267,22 @@ public class LinkControllerTest extends AbstractValidationTest {
         when(userServiceImpl.getUserIdByUsername("eddie"))
             .thenReturn(user.getId());
         doThrow(
-            new LinkDeleteException(linkDto1,
-                new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
-        ).when(linkService).deleteLink(linkDto1.id(), user.getId());
+            new LinkDeleteException(
+                linkResponse.id(),
+                user.getId(),
+                new RuntimeException(ExceptionMessages.DATABASE_FAILURE)
+            )
+        ).when(linkService).deleteLink(linkResponse.id(), user.getId());
 
         // Assert
-        String linkDtoIdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
+        String linkIdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkResponse.id());
 
-        mockMvc.perform(delete(linkDtoIdPath))
+        mockMvc.perform(delete(linkIdPath))
             .andExpect(status().isInternalServerError())
+            .andExpect(jsonPath("$.status").value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
             .andExpect(jsonPath("$.message").value(
-                String.format(ExceptionMessages.LINK_DELETE_FAILED, linkDto1.url())
+                String.format(ExceptionMessages.LINK_DELETE_FAILED, linkResponse.id(), user.getId())
             ));
     }
 
@@ -262,6 +296,8 @@ public class LinkControllerTest extends AbstractValidationTest {
 
         // Act & Assert
         mockMvc.perform(delete(LinkEndpoints.BASE_LINKS)).andExpect(status().isNoContent());
+
+        verify(linkService).deleteAllLinksByUser(user.getId());
     }
 
     @Test
@@ -280,43 +316,24 @@ public class LinkControllerTest extends AbstractValidationTest {
             .andExpect(jsonPath("$.message").value(
                 String.format(ExceptionMessages.LINKS_DELETE_FAILED, user.getId())
             ));
-    }
 
-    @ParameterizedTest
-    @ValueSource(strings = {TestConstants.HTTP_POST, TestConstants.HTTP_PUT})
-    void shouldReturnBadRequestWhenUserIdIsNull(String method) throws Exception {
-        String jsonWithNullUserId = new JsonBuilder()
-            .withUserId(null)
-            .withUrl(TestConstants.VALID_URL)
-            .withTitle(TestConstants.VALID_TITLE)
-            .withDescription(TestConstants.VALID_DESCRIPTION)
-            .build();
-
-        String linkDtoIdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
-
-        MockHttpServletRequestBuilder requestBuilder =
-            buildSimpleRequest(method, linkDtoIdPath);
-
-        ResultActions result = performJsonRequest(requestBuilder, jsonWithNullUserId);
-        assertValidationFailure(result, TestConstants.USER_ID);
+        verify(linkService).deleteAllLinksByUser(user.getId());
     }
 
     @ParameterizedTest
     @ValueSource(strings = {TestConstants.HTTP_POST, TestConstants.HTTP_PUT})
     void shouldReturnBadRequestWhenUrlIsEmpty(String method) throws Exception {
         String jsonWithEmptyUrl = new JsonBuilder()
-            .withUserId(TestConstants.VALID_USER_ID)
             .withUrl("")
             .withTitle(TestConstants.VALID_TITLE)
             .withDescription(TestConstants.VALID_DESCRIPTION)
             .build();
 
-        String linkDtoIdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
+        String linkIdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkResponse.id());
 
         MockHttpServletRequestBuilder requestBuilder =
-            buildSimpleRequest(method, linkDtoIdPath);
+            buildSimpleRequest(method, linkIdPath);
 
         ResultActions result = performJsonRequest(requestBuilder, jsonWithEmptyUrl);
         assertValidationFailure(result, TestConstants.URL);
@@ -325,19 +342,18 @@ public class LinkControllerTest extends AbstractValidationTest {
     @ParameterizedTest
     @ValueSource(strings = {TestConstants.HTTP_POST, TestConstants.HTTP_PUT})
     void shouldReturnBadRequestWhenUrlIsTooLong(String method) throws Exception {
-        String tooLongUrl = "a".repeat(265);
-        String jsonWithTooLongUrl = String.format(new JsonBuilder()
-            .withUserId(TestConstants.VALID_USER_ID)
-            .withUrl("https://%s.com")
+        String tooLongUrl = "https://" + "a".repeat(265) +".com";
+        String jsonWithTooLongUrl = new JsonBuilder()
+            .withUrl(tooLongUrl)
             .withTitle(TestConstants.VALID_TITLE)
             .withDescription(TestConstants.VALID_DESCRIPTION)
-            .build(), tooLongUrl);
+            .build();
 
-        String linkDtoIdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
+        String linkIdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkResponse.id());
 
         MockHttpServletRequestBuilder requestBuilder =
-            buildSimpleRequest(method, linkDtoIdPath);
+            buildSimpleRequest(method, linkIdPath);
 
         ResultActions result = performJsonRequest(requestBuilder, jsonWithTooLongUrl);
         assertValidationFailure(result, TestConstants.URL);
@@ -347,18 +363,17 @@ public class LinkControllerTest extends AbstractValidationTest {
     @ValueSource(strings = {TestConstants.HTTP_POST, TestConstants.HTTP_PUT})
     void shouldReturnBadRequestWhenTitleIsTooLong(String method) throws Exception {
         String tooLongTitle = "a".repeat(150);
-        String jsonWithTooLongTitle = String.format(new JsonBuilder()
-            .withUserId(TestConstants.VALID_USER_ID)
+        String jsonWithTooLongTitle = new JsonBuilder()
             .withUrl(TestConstants.VALID_URL)
-            .withTitle("%s")
+            .withTitle(tooLongTitle)
             .withDescription(TestConstants.VALID_DESCRIPTION)
-            .build(), tooLongTitle);
+            .build();
 
-        String linkDtoIdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
+        String linkIdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkResponse.id());
 
         MockHttpServletRequestBuilder requestBuilder =
-            buildSimpleRequest(method, linkDtoIdPath);
+            buildSimpleRequest(method, linkIdPath);
 
         ResultActions result = performJsonRequest(requestBuilder, jsonWithTooLongTitle);
         assertValidationFailure(result, TestConstants.TITLE);
@@ -368,17 +383,16 @@ public class LinkControllerTest extends AbstractValidationTest {
     @ValueSource(strings = {TestConstants.HTTP_POST, TestConstants.HTTP_PUT})
     void shouldReturnBadRequestWhenUrlIsInvalidFormat(String method) throws Exception {
         String jsonWithTooLongUrl = new JsonBuilder()
-            .withUserId(TestConstants.VALID_USER_ID)
             .withUrl("not-a-url-at-all")
             .withTitle(TestConstants.VALID_TITLE)
             .withDescription(TestConstants.VALID_DESCRIPTION)
             .build();
 
-        String linkDtoIdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
+        String linkIdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkResponse.id());
 
         MockHttpServletRequestBuilder requestBuilder =
-            buildSimpleRequest(method, linkDtoIdPath);
+            buildSimpleRequest(method, linkIdPath);
 
         ResultActions result = performJsonRequest(requestBuilder, jsonWithTooLongUrl);
         assertValidationFailure(result, TestConstants.URL);
@@ -388,18 +402,17 @@ public class LinkControllerTest extends AbstractValidationTest {
     @ValueSource(strings = {TestConstants.HTTP_POST, TestConstants.HTTP_PUT})
     void shouldReturnBadRequestWhenDescriptionIsTooLong(String method) throws Exception {
         String tooLongDescription = "a".repeat(265);
-        String jsonWithTooLongDescription = String.format(new JsonBuilder()
-            .withUserId(TestConstants.VALID_USER_ID)
+        String jsonWithTooLongDescription = new JsonBuilder()
             .withUrl(TestConstants.VALID_URL)
             .withTitle(TestConstants.VALID_TITLE)
-            .withDescription("%s")
-            .build(), tooLongDescription);
+            .withDescription(tooLongDescription)
+            .build();
 
-        String linkDtoIdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
+        String linkIdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkResponse.id());
 
         MockHttpServletRequestBuilder requestBuilder =
-            buildSimpleRequest(method, linkDtoIdPath);
+            buildSimpleRequest(method, linkIdPath);
 
         ResultActions result = performJsonRequest(requestBuilder, jsonWithTooLongDescription);
         assertValidationFailure(result, TestConstants.DESCRIPTION);
@@ -410,11 +423,11 @@ public class LinkControllerTest extends AbstractValidationTest {
     void shouldReturnBadRequestWhenFieldsAreMissing(String method) throws Exception {
         String invalidJson = "{}";
 
-        String linkDtoIdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
+        String linkIdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkResponse.id());
 
         MockHttpServletRequestBuilder requestBuilder =
-            buildSimpleRequest(method, linkDtoIdPath);
+            buildSimpleRequest(method, linkIdPath);
 
         ResultActions result = performJsonRequest(requestBuilder, invalidJson);
 
@@ -429,26 +442,6 @@ public class LinkControllerTest extends AbstractValidationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {TestConstants.HTTP_POST, TestConstants.HTTP_PUT})
-    void shouldReturnBadRequestWhenUserIdIsMissing(String method) throws Exception {
-        String jsonWithOutUserField = new JsonBuilder()
-            .withoutField(TestConstants.USER_ID)
-            .withUrl(TestConstants.VALID_URL)
-            .withTitle(TestConstants.VALID_TITLE)
-            .withDescription(TestConstants.VALID_DESCRIPTION)
-            .build();
-
-        String linkDtoIdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkDto1.id());
-
-        MockHttpServletRequestBuilder requestBuilder =
-            buildSimpleRequest(method, linkDtoIdPath);
-
-        ResultActions result = performJsonRequest(requestBuilder, jsonWithOutUserField);
-        assertValidationFailure(result, TestConstants.USER_ID);
-    }
-
-    @ParameterizedTest
     @ValueSource(
         strings = {
             TestConstants.HTTP_GET, TestConstants.HTTP_DELETE, TestConstants.HTTP_PUT
@@ -456,21 +449,20 @@ public class LinkControllerTest extends AbstractValidationTest {
     )
     void shouldReturnBadRequestWhenLinkIdIsZero(String method) throws Exception {
         String jsonValid = new JsonBuilder()
-            .withUserId(TestConstants.VALID_USER_ID)
             .withUrl(TestConstants.VALID_URL)
             .withTitle(TestConstants.VALID_TITLE)
             .withDescription(TestConstants.VALID_DESCRIPTION)
             .build();
 
-        String linkDtoIdPath = TestDataFactory
+        String linkIdPath = TestDataFactory
             .buildLinkEndpointWithId(
-                TestConstants.LINK_ID_PATH_VAR, TestConstants.INVALID_LINK_DTO_ID
+                TestConstants.LINK_ID_PATH_VAR, TestConstants.INVALID_LINK_ID
             );
 
         MockHttpServletRequestBuilder requestBuilder = switch(method) {
-            case TestConstants.HTTP_GET -> get(linkDtoIdPath);
-            case TestConstants.HTTP_DELETE -> delete(linkDtoIdPath);
-            case TestConstants.HTTP_PUT -> put(linkDtoIdPath).content(jsonValid);
+            case TestConstants.HTTP_GET -> get(linkIdPath);
+            case TestConstants.HTTP_DELETE -> delete(linkIdPath);
+            case TestConstants.HTTP_PUT -> put(linkIdPath).content(jsonValid);
             default -> throw new IllegalArgumentException(TestConstants.INVALID_METHOD);
         };
 

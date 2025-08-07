@@ -16,8 +16,7 @@ public class TestConstants {
     public static final String VALID_DESCRIPTION = "Valid description";
 
     public static final String INVALID_METHOD = "Invalid method";
-    public static final Long INVALID_LINK_DTO_ID = 0L;
-    public static final Long INVALID_USER_ID = -1L;
+    public static final Long INVALID_LINK_ID = 0L;
 
     public static final String HTTP_POST = "POST";
     public static final String HTTP_PUT = "PUT";
