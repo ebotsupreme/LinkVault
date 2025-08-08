@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.AuthEndpoints;
 import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.integration.util.JwtTestTokenFactory;
-import com.linkvault.model.Link;
 import com.linkvault.model.User;
 import com.linkvault.repository.LinkRepository;
 import com.linkvault.repository.UserRepository;
@@ -23,9 +22,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.util.List;
-
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -46,6 +42,8 @@ public class LinkControllerIntegrationTest {
 
     @Value("${jwt.secret}")
     private String jwtSecret;
+
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeEach()
     void setUp() {
@@ -77,23 +75,62 @@ public class LinkControllerIntegrationTest {
             .andReturn();
 
         String responseBody = result.getResponse().getContentAsString();
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = mapper.readTree(responseBody);
         String token = jsonNode.get("token").asText();
 
-        User user = userRepository.findByUsername("validUsername").orElseThrow();
-        Link link1 = new Link("https://github.com", "Git Hub",
-            "Repositories", user);
-        Link link2 = new Link("https://spring.io", "Spring Boot",
-            "Learning Spring Boot", user);
+        String createJsonOne = """
+                {
+                    "url": "https://docs.oracle.com",
+                    "title": "Java docs",
+                    "description": "Java documentation"
+                }
+            """;
 
-        linkRepository.saveAll(List.of(link1, link2));
+        String createJsonTwo = """
+                {
+                    "url": "https://github.com",
+                    "title": "Git Hub",
+                    "description": "Repositories"
+                }
+            """;
+
+        MvcResult linkResponseOne = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createJsonOne))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
+            .andExpect(jsonPath("$.title").value("Java docs"))
+            .andReturn();
+
+        MvcResult linkResponseTwo = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createJsonTwo))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.url").value("https://github.com"))
+            .andExpect(jsonPath("$.title").value("Git Hub"))
+            .andReturn();
+
+        String linkResponseBodyOne = linkResponseOne.getResponse().getContentAsString();
+        JsonNode linkResponseJsonNodeOne = mapper.readTree(linkResponseBodyOne);
+        String linkUrlOne = linkResponseJsonNodeOne.get("url").asText();
+        String linkTitleOne = linkResponseJsonNodeOne.get("title").asText();
+
+        String linkResponseBodyTwo = linkResponseTwo.getResponse().getContentAsString();
+        JsonNode linkResponseJsonNodeTwo = mapper.readTree(linkResponseBodyTwo);
+        String linkUrlTwo = linkResponseJsonNodeTwo.get("url").asText();
+        String linkTitleTwo = linkResponseJsonNodeTwo.get("title").asText();
 
         mockMvc.perform(get(LinkEndpoints.BASE_LINKS)
             .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].title").value(link1.getTitle()))
-            .andExpect(jsonPath("$[1].title").value(link2.getTitle()));
+            .andExpect(jsonPath("$[0].url").value(linkUrlOne))
+            .andExpect(jsonPath("$[0].title").value(linkTitleOne))
+            .andExpect(jsonPath("$[1].url").value(linkUrlTwo))
+            .andExpect(jsonPath("$[1].title").value(linkTitleTwo));
     }
 
     @Test
@@ -106,37 +143,11 @@ public class LinkControllerIntegrationTest {
             }
             """;
 
-        String jsonForUserB = """
-            {
-                "username": "validUsername2",
-                "password": "validPassword2@"
-            }
-            """;
-
         // Act & Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonForUserA))
             .andExpect(status().isOk());
-
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserB))
-            .andExpect(status().isOk());
-
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserB))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
-
-        User userB = userRepository.findByUsername("validUsername2").orElseThrow();
-        Link link1 = new Link("https://github.com", "Git Hub",
-            "Repositories", userB);
-        Link link2 = new Link("https://spring.io", "Spring Boot",
-            "Learning Spring Boot", userB);
-        linkRepository.saveAll(List.of(link1, link2));
 
         MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -146,7 +157,6 @@ public class LinkControllerIntegrationTest {
             .andReturn();
 
         String responseBody = result.getResponse().getContentAsString();
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = mapper.readTree(responseBody);
         String userAToken = jsonNode.get("token").asText();
 
@@ -193,23 +203,41 @@ public class LinkControllerIntegrationTest {
             .andReturn();
 
         String responseBody = result.getResponse().getContentAsString();
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = mapper.readTree(responseBody);
         String token = jsonNode.get("token").asText();
 
-        User user = userRepository.findByUsername("validUsername").orElseThrow();
-        Link link1 = new Link("https://github.com", "Git Hub",
-            "Repositories", user);
+        String createJson = """
+            {
+                "url": "https://docs.oracle.com",
+                "title": "Java docs",
+                "description": "Java documentation"
+            }
+            """;
 
-        linkRepository.save(link1);
+        MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createJson))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
+            .andExpect(jsonPath("$.title").value("Java docs"))
+            .andReturn();
+
+        String linkResponseBody = linkResponse.getResponse().getContentAsString();
+        JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
+        long linkId = linkResponseJsonNode.get("id").asLong();
+        String linkUrl = linkResponseJsonNode.get("url").asText();
+        String linkTitle = linkResponseJsonNode.get("title").asText();
 
         String link1IdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, link1.getId());
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkId);
 
         mockMvc.perform(get(link1IdPath)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.title").value(link1.getTitle()));
+            .andExpect(jsonPath("$.url").value(linkUrl))
+            .andExpect(jsonPath("$.title").value(linkTitle));
     }
 
     @Test
@@ -240,32 +268,52 @@ public class LinkControllerIntegrationTest {
                 .content(jsonForUserB))
             .andExpect(status().isOk());
 
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+        MvcResult resultForUserB = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonForUserB))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.token").isNotEmpty())
             .andReturn();
 
-        User userB = userRepository.findByUsername("validUsername2").orElseThrow();
-        Link link1 = new Link("https://github.com", "Git Hub",
-            "Repositories", userB);
-        linkRepository.save(link1);
+        String responseBodyForUserB = resultForUserB.getResponse().getContentAsString();
+        JsonNode jsonNodeForUserB = mapper.readTree(responseBodyForUserB);
+        String userBToken = jsonNodeForUserB.get("token").asText();
 
-        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+        String createJson = """
+            {
+                "url": "https://docs.oracle.com",
+                "title": "Java docs",
+                "description": "Java documentation"
+            }
+            """;
+
+        MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userBToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createJson))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
+            .andExpect(jsonPath("$.title").value("Java docs"))
+            .andReturn();
+
+        String linkResponseBody = linkResponse.getResponse().getContentAsString();
+        JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
+        long linkId = linkResponseJsonNode.get("id").asLong();
+
+        MvcResult resultForUserA = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonForUserA))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.token").isNotEmpty())
             .andReturn();
 
-        String responseBody = result.getResponse().getContentAsString();
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        String userAToken = jsonNode.get("token").asText();
+        String responseBodyForUserA = resultForUserA.getResponse().getContentAsString();
+        JsonNode jsonNodeForUserA = mapper.readTree(responseBodyForUserA);
+        String userAToken = jsonNodeForUserA.get("token").asText();
 
         String link1IdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, link1.getId());
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkId);
 
         mockMvc.perform(get(link1IdPath)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken))
@@ -296,7 +344,6 @@ public class LinkControllerIntegrationTest {
             .andReturn();
 
         String responseBody = result.getResponse().getContentAsString();
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = mapper.readTree(responseBody);
         String userAToken = jsonNode.get("token").asText();
 
@@ -355,32 +402,52 @@ public class LinkControllerIntegrationTest {
                 .content(jsonForUserB))
             .andExpect(status().isOk());
 
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+        MvcResult resultForUserB = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonForUserB))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.token").isNotEmpty())
             .andReturn();
 
-        User userB = userRepository.findByUsername("validUsername2").orElseThrow();
-        Link link1 = new Link("https://github.com", "Git Hub",
-            "Repositories", userB);
-        linkRepository.save(link1);
+        String responseBodyForUserB = resultForUserB.getResponse().getContentAsString();
+        JsonNode jsonNodeForUserB = mapper.readTree(responseBodyForUserB);
+        String userBToken = jsonNodeForUserB.get("token").asText();
 
-        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+        String createJson = """
+            {
+                "url": "https://docs.oracle.com",
+                "title": "Java docs",
+                "description": "Java documentation"
+            }
+            """;
+
+        MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userBToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createJson))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
+            .andExpect(jsonPath("$.title").value("Java docs"))
+            .andReturn();
+
+        String linkResponseBody = linkResponse.getResponse().getContentAsString();
+        JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
+        long linkId = linkResponseJsonNode.get("id").asLong();
+
+        MvcResult resultForUserA = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonForUserA))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.token").isNotEmpty())
             .andReturn();
 
-        String responseBody = result.getResponse().getContentAsString();
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        String userAToken = jsonNode.get("token").asText();
+        String responseBodyForUserA = resultForUserA.getResponse().getContentAsString();
+        JsonNode jsonNodeForUserA = mapper.readTree(responseBodyForUserA);
+        String userAToken = jsonNodeForUserA.get("token").asText();
 
         String link1IdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, link1.getId());
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkId);
 
         mockMvc.perform(delete(link1IdPath)
             .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken))
@@ -430,7 +497,6 @@ public class LinkControllerIntegrationTest {
             .andReturn();
 
         String responseBody = result.getResponse().getContentAsString();
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = mapper.readTree(responseBody);
         String userAToken = jsonNode.get("token").asText();
 
@@ -489,41 +555,60 @@ public class LinkControllerIntegrationTest {
                 .content(jsonForUserB))
             .andExpect(status().isOk());
 
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+        MvcResult resultForUserB = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonForUserB))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.token").isNotEmpty())
             .andReturn();
 
-        User userB = userRepository.findByUsername("validUsername2").orElseThrow();
-        Link link1 = new Link("https://github.com", "Git Hub",
-            "Repositories", userB);
-        linkRepository.save(link1);
+        String responseBodyForUserB = resultForUserB.getResponse().getContentAsString();
+        JsonNode jsonNodeForUserB = mapper.readTree(responseBodyForUserB);
+        String userBToken = jsonNodeForUserB.get("token").asText();
 
-        String updateLinkJson = String.format("""
+        String createJson = """
             {
-                "id": %d,
+                "url": "https://docs.oracle.com",
+                "title": "Java docs",
+                "description": "Java documentation"
+            }
+            """;
+
+        MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userBToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createJson))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
+            .andExpect(jsonPath("$.title").value("Java docs"))
+            .andReturn();
+
+        String linkResponseBody = linkResponse.getResponse().getContentAsString();
+        JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
+        long linkId = linkResponseJsonNode.get("id").asLong();
+
+        String updateLinkJson = """
+            {
                 "url": "https://updated.com",
                 "title": "Updated Title",
                 "description": "Updated Description"
             }
-            """, link1.getId());
+            """;
 
-        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+        MvcResult resultForUserA = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonForUserA))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.token").isNotEmpty())
             .andReturn();
 
-        String responseBody = result.getResponse().getContentAsString();
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        String userAToken = jsonNode.get("token").asText();
+        String responseBodyForUserA = resultForUserA.getResponse().getContentAsString();
+        JsonNode jsonNodeForUserA = mapper.readTree(responseBodyForUserA);
+        String userAToken = jsonNodeForUserA.get("token").asText();
 
         String link1IdPath = TestDataFactory
-            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, link1.getId());
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkId);
 
         mockMvc.perform(put(link1IdPath)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken)
@@ -587,7 +672,6 @@ public class LinkControllerIntegrationTest {
             .andReturn();
 
         String responseBody = result.getResponse().getContentAsString();
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = mapper.readTree(responseBody);
         String userAToken = jsonNode.get("token").asText();
 
@@ -608,13 +692,10 @@ public class LinkControllerIntegrationTest {
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(maliciousJson))
-            .andExpect(status().isCreated());
-
-        User userA = userRepository.findByUsername("validUsername1").orElseThrow();
-
-        List<Link> links = linkRepository.findByUserId(userA.getId());
-        assertThat(links).hasSize(1);
-        assertThat(links.getFirst().getUser().getId()).isEqualTo(userA.getId());
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.url").value("https://githack.com"))
+            .andExpect(jsonPath("$.title").value("Git Hack"));
     }
 
     @Test
@@ -634,5 +715,120 @@ public class LinkControllerIntegrationTest {
         mockMvc.perform(post(link1IdPath)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + "malformed.token"))
             .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldReturnCreatedStatusCode_AndCreateLinkForAuthenticatedUser() throws Exception {
+        // Arrange
+        String jsonForUserA = """
+            {
+                "username": "validUsername1",
+                "password": "validPassword1@"
+            }
+            """;
+
+        // Act & Assert
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserA))
+            .andExpect(status().isOk());
+
+        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserA))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").isNotEmpty())
+            .andReturn();
+
+        String responseBody = result.getResponse().getContentAsString();
+        JsonNode jsonNode = mapper.readTree(responseBody);
+        String userAToken = jsonNode.get("token").asText();
+
+        String createJson = """
+            {
+                "url": "https://docs.oracle.com",
+                "title": "Java docs",
+                "description": "Java documentation"
+            }
+            """;
+
+        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createJson))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
+            .andExpect(jsonPath("$.title").value("Java docs"));
+    }
+
+    @Test
+    void shouldReturnSuccessStatusCode_AndUpdateLinkForAuthenticatedUser() throws Exception {
+        // Arrange
+        String jsonForUserA = """
+            {
+                "username": "validUsername1",
+                "password": "validPassword1@"
+            }
+            """;
+
+        // Act & Assert
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserA))
+            .andExpect(status().isOk());
+
+        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonForUserA))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").isNotEmpty())
+            .andReturn();
+
+        String responseBody = result.getResponse().getContentAsString();
+        JsonNode jsonNode = mapper.readTree(responseBody);
+        String userAToken = jsonNode.get("token").asText();
+
+        String createJson = """
+            {
+                "url": "https://docs.oracle.com",
+                "title": "Java docs",
+                "description": "Java documentation"
+            }
+            """;
+
+        MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createJson))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
+            .andExpect(jsonPath("$.title").value("Java docs"))
+            .andReturn();
+
+        String linkResponseBody = linkResponse.getResponse().getContentAsString();
+        JsonNode linkJsonNode = mapper.readTree(linkResponseBody);
+        long linkId = linkJsonNode.get("id").asLong();
+
+        String updateLinkJson = """
+            {
+                "url": "https://updated.com",
+                "title": "Updated Title",
+                "description": "Updated Description"
+            }
+            """;
+
+        String link1IdPath = TestDataFactory
+            .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkId);
+
+        mockMvc.perform(put(link1IdPath)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateLinkJson))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(linkId))
+            .andExpect(jsonPath("$.url").value("https://updated.com"))
+            .andExpect(jsonPath("$.title").value("Updated Title"));
     }
 }
