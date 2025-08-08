@@ -1,15 +1,16 @@
 package com.linkvault.service;
 
-import com.linkvault.dto.LinkDto;
+import com.linkvault.dto.LinkRequest;
+import com.linkvault.dto.LinkResponse;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface LinkService {
-    List<LinkDto> getAllLinksForUser(Long userId);
-    Optional<LinkDto> getLinkById(Long linkId, Long requestingUserId);
-    Optional<LinkDto> createLink(Long userId, LinkDto linkDto);
-    Optional<LinkDto> updateLink(Long linkId, LinkDto linkDto, Long requestingUserId);
+    List<LinkResponse> getAllLinksForUser(Long userId);
+    LinkResponse getLinkById(Long linkId, Long requestingUserId);
+    LinkResponse createLink(Long userId, LinkRequest linkRequest);
+    LinkResponse updateLink(Long linkId, LinkRequest linkRequest, Long requestingUserId);
     void deleteLink(Long linkId, Long requestingUserId);
     void deleteAllLinksByUser(Long userId);
 }

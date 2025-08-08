@@ -1,9 +1,10 @@
 package com.linkvault.controller;
 
 import com.linkvault.constants.apiPaths.LinkEndpoints;
-import com.linkvault.dto.LinkDto;
+import com.linkvault.dto.LinkRequest;
+import com.linkvault.dto.LinkResponse;
 import com.linkvault.service.LinkService;
-import com.linkvault.service.UserServiceImpl;
+import com.linkvault.service.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
@@ -24,70 +25,57 @@ import static com.linkvault.util.LogUtils.*;
 @RequestMapping(LinkEndpoints.BASE_LINKS)
 public class LinkController {
     private final LinkService linkService;
-    private final UserServiceImpl userServiceImpl;
+    private final UserService userService;
 
-    public LinkController(LinkService linkService, UserServiceImpl userServiceImpl) {
+    public LinkController(LinkService linkService, UserService userService) {
         this.linkService = linkService;
-        this.userServiceImpl = userServiceImpl;
+        this.userService = userService;
     }
 
     @GetMapping
-    public ResponseEntity<List<LinkDto>> getAllLinksForUser(
+    public ResponseEntity<List<LinkResponse>> getAllLinksForUser(
         @AuthenticationPrincipal UserDetails userDetails
     ) {
-        String username = userDetails.getUsername();
-        Long userId = userServiceImpl.getUserIdByUsername(username);
+        Long userId = getCurrentUserId(userDetails);
 
         info(log, "Getting all links for user ID: {}", userId);
         return ResponseEntity.ok(linkService.getAllLinksForUser(userId));
     }
 
     @GetMapping(LinkEndpoints.BY_LINK_ID)
-    public ResponseEntity<LinkDto> getLinkById(
+    public ResponseEntity<LinkResponse> getLinkById(
         @PathVariable @Min(1) Long linkId,
         @AuthenticationPrincipal UserDetails userDetails
     ) {
-        String username = userDetails.getUsername();
-        Long userId = userServiceImpl.getUserIdByUsername(username);
+        Long userId = getCurrentUserId(userDetails);
 
         info(log, "Getting link by ID: {}", linkId);
-        return linkService.getLinkById(linkId, userId)
-            .map(ResponseEntity::ok)
-            .orElseGet(()-> ResponseEntity.notFound().build());
+        return ResponseEntity.ok(linkService.getLinkById(linkId, userId));
     }
 
     @PostMapping
-    public ResponseEntity<LinkDto> createLink(
-        @Valid @RequestBody LinkDto linkDto,
+    public ResponseEntity<LinkResponse> createLink(
+        @Valid @RequestBody LinkRequest linkRequest,
         @AuthenticationPrincipal UserDetails userDetails
     ) {
-        String username = userDetails.getUsername();
-        Long userId = userServiceImpl.getUserIdByUsername(username);
+        Long userId = getCurrentUserId(userDetails);
 
         info(log, "Creating link for user ID: {}", userId);
-        return linkService.createLink(userId, linkDto)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+        LinkResponse response = linkService.createLink(userId, linkRequest);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping(LinkEndpoints.BY_LINK_ID)
-    public ResponseEntity<LinkDto> updateLink(
+    public ResponseEntity<LinkResponse> updateLink(
         @PathVariable @Min(1) Long linkId,
-        @Valid @RequestBody LinkDto linkDto,
+        @Valid @RequestBody LinkRequest linkRequest,
         @AuthenticationPrincipal UserDetails userDetails
     ) {
-        if (!linkId.equals(linkDto.id())) {
-            warn(log, "Failed to update link by ID: {}", linkId);
-            return ResponseEntity.badRequest().build();
-        }
-
-        String username = userDetails.getUsername();
-        Long userId = userServiceImpl.getUserIdByUsername(username);
+        Long userId = getCurrentUserId(userDetails);
 
         info(log, "Updating link by ID: {}", linkId);
-        return linkService.updateLink(linkId, linkDto, userId)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+        return ResponseEntity.ok(linkService.updateLink(linkId, linkRequest, userId));
     }
 
     @DeleteMapping(LinkEndpoints.BY_LINK_ID)
@@ -95,10 +83,9 @@ public class LinkController {
         @PathVariable @Min(1) Long linkId,
         @AuthenticationPrincipal UserDetails userDetails
     ) {
-        info(log, "Deleting link by ID: {}", linkId);
+        Long userId = getCurrentUserId(userDetails);
 
-        String username = userDetails.getUsername();
-        Long userId = userServiceImpl.getUserIdByUsername(username);
+        info(log, "Deleting link by ID: {}", linkId);
 
         linkService.deleteLink(linkId, userId);
         return ResponseEntity.noContent().build();
@@ -108,11 +95,15 @@ public class LinkController {
     public ResponseEntity<Void> deleteAllLinksByUser(
         @AuthenticationPrincipal UserDetails userDetails
     ) {
-        String username = userDetails.getUsername();
-        Long userId = userServiceImpl.getUserIdByUsername(username);
+        Long userId = getCurrentUserId(userDetails);
 
         info(log, "Deleting links by user ID: {}", userId);
         linkService.deleteAllLinksByUser(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    private Long getCurrentUserId(UserDetails userDetails) {
+        String username = userDetails.getUsername();
+        return userService.getUserIdByUsername(username);
     }
 }

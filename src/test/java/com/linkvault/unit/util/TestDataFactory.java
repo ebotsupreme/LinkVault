@@ -1,7 +1,8 @@
 package com.linkvault.unit.util;
 
 import com.linkvault.constants.apiPaths.LinkEndpoints;
-import com.linkvault.dto.LinkDto;
+import com.linkvault.dto.LinkRequest;
+import com.linkvault.dto.LinkResponse;
 import com.linkvault.model.Link;
 import com.linkvault.model.User;
 
@@ -31,18 +32,28 @@ public class TestDataFactory {
         return link2;
     }
 
-    public static LinkDto createLinkDto1() {
-        return new LinkDto(TEST_ID1, "https://github.com",
-            "Git Hub", "Repositories", createTestUser().getId());
-    }
-
-    public static LinkDto createLinkDto2() {
-        return new LinkDto(TEST_ID2, "https://spring.io",
-            "Spring Boot", "Learning Spring Boot", createTestUser().getId());
-    }
-
     public static String buildLinkEndpointWithId(String path, Long linkDtoId) {
         return LinkEndpoints.BASE_LINKS + LinkEndpoints.BY_LINK_ID
             .replace(path, linkDtoId.toString());
+    }
+
+    public static LinkResponse createLinkResponse() {
+        return new LinkResponse(TEST_ID1, "https://github.com",
+            "Git Hub", "Repositories", createTestUser().getId());
+    }
+
+    public static LinkResponse createLinkResponseTwo() {
+        return new LinkResponse(TEST_ID2, "https://spring.io",
+            "Spring Boot", "Learning Spring Boot", createTestUser().getId());
+    }
+
+    public static LinkRequest createLinkRequest() {
+        return new LinkRequest("https://github.com",
+            "Git Hub", "Repositories");
+    }
+
+    public static LinkRequest createLinkRequestTwo() {
+        return new LinkRequest("https://spring.io",
+            "Spring Boot", "Learning Spring Boot");
     }
 }
