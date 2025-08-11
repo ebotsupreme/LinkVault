@@ -8,7 +8,6 @@ public class TestConstants {
     public static final String TITLE = "title";
     public static final String DESCRIPTION = "description";
 
-    public static final Integer VALID_USER_ID = 1;
     public static final String VALID_URL = "https://valid.com";
     public static final String VALID_TITLE = "Valid title";
     public static final String VALID_DESCRIPTION = "Valid description";

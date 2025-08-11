@@ -4,7 +4,6 @@ import com.linkvault.dto.LinkRequest;
 import com.linkvault.dto.LinkResponse;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface LinkService {
     List<LinkResponse> getAllLinksForUser(Long userId);
