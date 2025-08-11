@@ -53,7 +53,7 @@ public class LinkServiceTest {
     @Test
     void shouldReturnListOfLinkResponsesWhenUserHasLinks() {
         // Arrange
-        when(linkRepository.findByUserId(user.getId())).thenReturn(List.of(link1, link2));
+        when(linkRepository.findByUserIdOrderByCreatedAt(user.getId())).thenReturn(List.of(link1, link2));
 
         // Act
         List<LinkResponse> result = linkService.getAllLinksForUser(user.getId());
@@ -67,7 +67,7 @@ public class LinkServiceTest {
         assertEquals(link2.getTitle(), result.get(1).title());
         assertEquals(link2.getUrl(), result.get(1).url());
 
-        verify(linkRepository).findByUserId(user.getId());
+        verify(linkRepository).findByUserIdOrderByCreatedAt(user.getId());
     }
 
     @Test
@@ -238,26 +238,26 @@ public class LinkServiceTest {
     void shouldDeleteAllLinksForGivenUser() {
         // Arrange
         List<Link> linkList = new ArrayList<>(List.of(link1, link2));
-        when(linkRepository.findByUserId(user.getId())).thenReturn(linkList);
+        when(linkRepository.findByUserIdOrderByCreatedAt(user.getId())).thenReturn(linkList);
         doNothing().when(linkRepository).deleteAll(linkList);
 
         // Act
         linkService.deleteAllLinksByUser(user.getId());
 
         // Assert
-        verify(linkRepository).findByUserId(user.getId());
+        verify(linkRepository).findByUserIdOrderByCreatedAt(user.getId());
         verify(linkRepository).deleteAll(linkList);
     }
 
     @Test
     void shouldReturnSilentlyWhenNoLinksToDelete() {
         // Arrange
-        when(linkRepository.findByUserId(user.getId())).thenReturn(List.of());
+        when(linkRepository.findByUserIdOrderByCreatedAt(user.getId())).thenReturn(List.of());
 
         // Act & Assert
         linkService.deleteAllLinksByUser(user.getId());
 
-        verify(linkRepository).findByUserId(user.getId());
+        verify(linkRepository).findByUserIdOrderByCreatedAt(user.getId());
         verify(linkRepository, never()).deleteAll(any());
     }
 
@@ -265,7 +265,7 @@ public class LinkServiceTest {
     void shouldThrowExceptionWhenDeleteAllFails() {
         // Arrange
         List<Link> linkList = new ArrayList<>(List.of(link1, link2));
-        when(linkRepository.findByUserId(user.getId())).thenReturn(linkList);
+        when(linkRepository.findByUserIdOrderByCreatedAt(user.getId())).thenReturn(linkList);
         doThrow(new RuntimeException(ExceptionMessages.DATABASE_FAILURE))
             .when(linkRepository).deleteAll(linkList);
 
@@ -273,7 +273,7 @@ public class LinkServiceTest {
         assertThrows(LinksDeleteException.class, () ->
             linkService.deleteAllLinksByUser(user.getId()));
 
-        verify(linkRepository).findByUserId(user.getId());
+        verify(linkRepository).findByUserIdOrderByCreatedAt(user.getId());
         verify(linkRepository).deleteAll(linkList);
     }
 }
