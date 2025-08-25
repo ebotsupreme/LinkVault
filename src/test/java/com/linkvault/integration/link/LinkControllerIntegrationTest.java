@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.AuthEndpoints;
 import com.linkvault.constants.apiPaths.LinkEndpoints;
+import com.linkvault.integration.util.IntegrationTestFactory;
 import com.linkvault.integration.util.JwtTestTokenFactory;
 import com.linkvault.model.User;
 import com.linkvault.repository.LinkRepository;
@@ -22,8 +23,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import static com.linkvault.integration.util.IntegrationTestFactory.createJsonForLink;
-import static com.linkvault.integration.util.IntegrationTestFactory.createJsonForUser;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -56,32 +55,23 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnLinksForUser_WhenAuthenticated() throws Exception {
         // Arrange
-        String json = createJsonForUser("validUsername", "validPassword1@");
+        String json = IntegrationTestFactory.createJsonForUser(
+            "validUsername", "validPassword1@"
+        );
 
         // Act & Assert
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(json))
-            .andExpect(status().isOk());
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, json);
 
-        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
+        MvcResult result = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, json);
+        String token = IntegrationTestFactory.getUserTokenFromJsonResponse(result, mapper);
 
-        String responseBody = result.getResponse().getContentAsString();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        String token = jsonNode.get("token").asText();
-
-        String createJsonOne = createJsonForLink(
+            String createJsonOne = IntegrationTestFactory.createJsonForLink(
             "https://docs.oracle.com",
             "Java docs",
             "Java documentation"
         );
 
-        String createJsonTwo = createJsonForLink(
+        String createJsonTwo = IntegrationTestFactory.createJsonForLink(
             "https://github.com",
             "Git Hub",
             "Repositories"
@@ -129,24 +119,15 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnOkWithEmptyList_WhenUserHasNoOwnedLinks() throws Exception {
         // Arrange
-        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
+        String jsonForUserA = IntegrationTestFactory.createJsonForUser(
+            "validUsername1", "validPassword1@"
+        );
 
         // Act & Assert
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk());
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, jsonForUserA);
 
-        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
-
-        String responseBody = result.getResponse().getContentAsString();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        String userAToken = jsonNode.get("token").asText();
+        MvcResult result = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserA);
+        String userAToken = IntegrationTestFactory.getUserTokenFromJsonResponse(result, mapper);
 
         mockMvc.perform(get(LinkEndpoints.BASE_LINKS)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken))
@@ -170,26 +151,18 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnLinkForUser_WhenAuthenticated() throws Exception {
         // Arrange
-        String json = createJsonForUser("validUsername", "validPassword1@");
+        String json = IntegrationTestFactory.createJsonForUser(
+            "validUsername",
+            "validPassword1@"
+        );
 
         // Act & Assert
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json))
-            .andExpect(status().isOk());
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, json);
 
-        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
+        MvcResult result = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, json);
+        String token = IntegrationTestFactory.getUserTokenFromJsonResponse(result, mapper);
 
-        String responseBody = result.getResponse().getContentAsString();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        String token = jsonNode.get("token").asText();
-
-        String createJson = createJsonForLink(
+        String createJson = IntegrationTestFactory.createJsonForLink(
             "https://docs.oracle.com",
             "Java docs",
             "Java documentation"
@@ -224,32 +197,23 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnForbidden_WhenUserTriesToFetchAnotherUsersLink() throws Exception {
         // Arrange
-        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
-        String jsonForUserB = createJsonForUser("validUsername2", "validPassword2@");
+        String jsonForUserA = IntegrationTestFactory.createJsonForUser(
+            "validUsername1",
+            "validPassword1@"
+        );
+        String jsonForUserB = IntegrationTestFactory.createJsonForUser(
+            "validUsername2",
+            "validPassword2@"
+        );
 
         // Act & Assert
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk());
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, jsonForUserA);
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, jsonForUserB);
 
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserB))
-            .andExpect(status().isOk());
+        MvcResult resultForUserB = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserB);
+        String userBToken = IntegrationTestFactory.getUserTokenFromJsonResponse(resultForUserB, mapper);
 
-        MvcResult resultForUserB = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserB))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
-
-        String responseBodyForUserB = resultForUserB.getResponse().getContentAsString();
-        JsonNode jsonNodeForUserB = mapper.readTree(responseBodyForUserB);
-        String userBToken = jsonNodeForUserB.get("token").asText();
-
-        String createJson = createJsonForLink(
+        String createJson = IntegrationTestFactory.createJsonForLink(
             "https://docs.oracle.com",
             "Java docs",
             "Java documentation"
@@ -269,16 +233,8 @@ public class LinkControllerIntegrationTest {
         JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
         long linkId = linkResponseJsonNode.get("id").asLong();
 
-        MvcResult resultForUserA = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
-
-        String responseBodyForUserA = resultForUserA.getResponse().getContentAsString();
-        JsonNode jsonNodeForUserA = mapper.readTree(responseBodyForUserA);
-        String userAToken = jsonNodeForUserA.get("token").asText();
+        MvcResult resultForUserA = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserA);
+        String userAToken = IntegrationTestFactory.getUserTokenFromJsonResponse(resultForUserA, mapper);
 
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkId);
@@ -291,24 +247,16 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnNotFound_WhenUserFetchesALinkThatDoesntExist() throws Exception {
         // Arrange
-        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
+        String jsonForUserA = IntegrationTestFactory.createJsonForUser(
+            "validUsername1",
+            "validPassword1@"
+        );
 
         // Act & Assert
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk());
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, jsonForUserA);
 
-        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
-
-        String responseBody = result.getResponse().getContentAsString();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        String userAToken = jsonNode.get("token").asText();
+        MvcResult result = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserA);
+        String userAToken = IntegrationTestFactory.getUserTokenFromJsonResponse(result, mapper);
 
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, 999999999L);
@@ -340,32 +288,23 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnForbidden_WhenUserTriesToDeleteAnotherUsersLink() throws Exception {
         // Arrange
-        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
-        String jsonForUserB = createJsonForUser("validUsername2", "validPassword2@");
+        String jsonForUserA = IntegrationTestFactory.createJsonForUser(
+            "validUsername1",
+            "validPassword1@"
+        );
+        String jsonForUserB = IntegrationTestFactory.createJsonForUser(
+            "validUsername2",
+            "validPassword2@"
+        );
 
         // Act & Assert
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk());
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, jsonForUserA);
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, jsonForUserB);
 
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserB))
-            .andExpect(status().isOk());
+        MvcResult resultForUserB = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserB);
+        String userBToken = IntegrationTestFactory.getUserTokenFromJsonResponse(resultForUserB, mapper);
 
-        MvcResult resultForUserB = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserB))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
-
-        String responseBodyForUserB = resultForUserB.getResponse().getContentAsString();
-        JsonNode jsonNodeForUserB = mapper.readTree(responseBodyForUserB);
-        String userBToken = jsonNodeForUserB.get("token").asText();
-
-        String createJson = createJsonForLink(
+        String createJson = IntegrationTestFactory.createJsonForLink(
             "https://docs.oracle.com",
             "Java docs",
             "Java documentation"
@@ -385,16 +324,8 @@ public class LinkControllerIntegrationTest {
         JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
         long linkId = linkResponseJsonNode.get("id").asLong();
 
-        MvcResult resultForUserA = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
-
-        String responseBodyForUserA = resultForUserA.getResponse().getContentAsString();
-        JsonNode jsonNodeForUserA = mapper.readTree(responseBodyForUserA);
-        String userAToken = jsonNodeForUserA.get("token").asText();
+        MvcResult resultForUserA = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserA);
+        String userAToken = IntegrationTestFactory.getUserTokenFromJsonResponse(resultForUserA, mapper);
 
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkId);
@@ -426,24 +357,16 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnNoContent_WhenUserTriesToDeleteEmptyLinkList() throws Exception {
         // Arrange
-        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
+        String jsonForUserA = IntegrationTestFactory.createJsonForUser(
+            "validUsername1",
+            "validPassword1@"
+        );
 
         // Act & Assert
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk());
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, jsonForUserA);
 
-        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
-
-        String responseBody = result.getResponse().getContentAsString();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        String userAToken = jsonNode.get("token").asText();
+        MvcResult result = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserA);
+        String userAToken = IntegrationTestFactory.getUserTokenFromJsonResponse(result, mapper);
 
         mockMvc.perform(delete(LinkEndpoints.BASE_LINKS)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken))
@@ -475,32 +398,23 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnForbidden_WhenUserTriesToUpdateAnotherUsersLink() throws Exception {
         // Arrange
-        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
-        String jsonForUserB = createJsonForUser("validUsername2", "validPassword2@");
+        String jsonForUserA = IntegrationTestFactory.createJsonForUser(
+            "validUsername1",
+            "validPassword1@"
+        );
+        String jsonForUserB = IntegrationTestFactory.createJsonForUser(
+            "validUsername2",
+            "validPassword2@"
+        );
 
         // Act & Assert
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk());
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, jsonForUserA);
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, jsonForUserB);
 
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserB))
-            .andExpect(status().isOk());
+        MvcResult resultForUserB = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserB);
+        String userBToken = IntegrationTestFactory.getUserTokenFromJsonResponse(resultForUserB, mapper);
 
-        MvcResult resultForUserB = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserB))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
-
-        String responseBodyForUserB = resultForUserB.getResponse().getContentAsString();
-        JsonNode jsonNodeForUserB = mapper.readTree(responseBodyForUserB);
-        String userBToken = jsonNodeForUserB.get("token").asText();
-
-        String createJson = createJsonForLink(
+        String createJson = IntegrationTestFactory.createJsonForLink(
             "https://docs.oracle.com",
             "Java docs",
             "Java documentation"
@@ -520,22 +434,14 @@ public class LinkControllerIntegrationTest {
         JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
         long linkId = linkResponseJsonNode.get("id").asLong();
 
-        String updateLinkJson = createJsonForLink(
+        String updateLinkJson = IntegrationTestFactory.createJsonForLink(
             "https://updated.com",
             "Updated Title",
             "Updated Description"
         );
 
-        MvcResult resultForUserA = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
-
-        String responseBodyForUserA = resultForUserA.getResponse().getContentAsString();
-        JsonNode jsonNodeForUserA = mapper.readTree(responseBodyForUserA);
-        String userAToken = jsonNodeForUserA.get("token").asText();
+        MvcResult resultForUserA = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserA);
+        String userAToken = IntegrationTestFactory.getUserTokenFromJsonResponse(resultForUserA, mapper);
 
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkId);
@@ -569,31 +475,21 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldIgnoreUserIdInRequest_AndCreateLinkForAuthenticatedUser() throws Exception {
         // Arrange
-        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
-        String jsonForUserB = createJsonForUser("validUsername2", "validPassword2@");
+        String jsonForUserA = IntegrationTestFactory.createJsonForUser(
+            "validUsername1",
+            "validPassword1@"
+        );
+        String jsonForUserB = IntegrationTestFactory.createJsonForUser(
+            "validUsername2",
+            "validPassword2@"
+        );
 
         // Act & Assert
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk());
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, jsonForUserA);
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, jsonForUserB);
 
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserB))
-            .andExpect(status().isOk());
-
-        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
-
-        String responseBody = result.getResponse().getContentAsString();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        String userAToken = jsonNode.get("token").asText();
-
+        MvcResult result = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserA);
+        String userAToken = IntegrationTestFactory.getUserTokenFromJsonResponse(result, mapper);
 
         User userB = userRepository.findByUsername("validUsername2").orElseThrow();
 
@@ -639,26 +535,18 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnCreatedStatusCode_AndCreateLinkForAuthenticatedUser() throws Exception {
         // Arrange
-        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
+        String jsonForUserA = IntegrationTestFactory.createJsonForUser(
+            "validUsername1",
+            "validPassword1@"
+        );
 
         // Act & Assert
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk());
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, jsonForUserA);
 
-        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
+        MvcResult result = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserA);
+        String userAToken = IntegrationTestFactory.getUserTokenFromJsonResponse(result, mapper);
 
-        String responseBody = result.getResponse().getContentAsString();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        String userAToken = jsonNode.get("token").asText();
-
-        String createJson = createJsonForLink(
+        String createJson = IntegrationTestFactory.createJsonForLink(
             "https://docs.oracle.com",
             "Java docs",
             "Java documentation"
@@ -677,26 +565,18 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnSuccessStatusCode_AndUpdateLinkForAuthenticatedUser() throws Exception {
         // Arrange
-        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
+        String jsonForUserA = IntegrationTestFactory.createJsonForUser(
+            "validUsername1",
+            "validPassword1@"
+        );
 
         // Act & Assert
-        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk());
+        IntegrationTestFactory.performJsonRegisterUserRequest(mockMvc, jsonForUserA);
 
-        MvcResult result = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonForUserA))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").isNotEmpty())
-            .andReturn();
+        MvcResult result = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserA);
+        String userAToken = IntegrationTestFactory.getUserTokenFromJsonResponse(result, mapper);
 
-        String responseBody = result.getResponse().getContentAsString();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        String userAToken = jsonNode.get("token").asText();
-
-        String createJson = createJsonForLink(
+        String createJson = IntegrationTestFactory.createJsonForLink(
             "https://docs.oracle.com",
             "Java docs",
             "Java documentation"
@@ -716,7 +596,7 @@ public class LinkControllerIntegrationTest {
         JsonNode linkJsonNode = mapper.readTree(linkResponseBody);
         long linkId = linkJsonNode.get("id").asLong();
 
-        String updateLinkJson = createJsonForLink(
+        String updateLinkJson = IntegrationTestFactory.createJsonForLink(
             "https://updated.com",
             "Updated Title",
             "Updated Description"

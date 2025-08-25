@@ -1,5 +1,20 @@
 package com.linkvault.integration.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.linkvault.constants.apiPaths.AuthEndpoints;
+import org.apache.catalina.mapper.Mapper;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
+
+import java.io.UnsupportedEncodingException;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 public class IntegrationTestFactory {
 
     public static String createJsonForUser(String username, String password) {
@@ -20,4 +35,30 @@ public class IntegrationTestFactory {
             }
             """, url, title, description);
     }
+
+    public static void performJsonRegisterUserRequest(MockMvc mockMvc, String json)
+        throws Exception {
+        mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isOk());
+    }
+
+    public static MvcResult performJsonUserLoginRequest(MockMvc mockMvc, String json)
+        throws Exception {
+        return mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").isNotEmpty())
+            .andReturn();
+    }
+
+    public static String getUserTokenFromJsonResponse(MvcResult result, ObjectMapper mapper)
+        throws Exception {
+        String responseBody = result.getResponse().getContentAsString();
+        JsonNode jsonNode = mapper.readTree(responseBody);
+        return jsonNode.get("token").asText();
+    }
+
 }
