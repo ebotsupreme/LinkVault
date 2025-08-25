@@ -31,7 +31,7 @@ public class LinkServiceImpl implements LinkService{
     @Transactional(readOnly = true)
     public List<LinkResponse> getAllLinksForUser(Long userId) {
         info(log, LogMessages.FETCH_LINKS_FOR_USER, userId);
-        List<Link> links = linkRepository.findByUserIdOrderByCreatedAt(userId);
+        List<Link> links = linkRepository.findByUserIdOrderByCreatedAtAsc(userId);
 
         info(log, "Found {} links for user ID: {}", links.size(), userId);
         return links.stream()
@@ -141,7 +141,7 @@ public class LinkServiceImpl implements LinkService{
     @Transactional
     public void deleteAllLinksByUser(Long userId) {
         info(log, LogMessages.FETCH_LINKS_FOR_USER, userId);
-        List<Link> links = linkRepository.findByUserIdOrderByCreatedAt(userId);
+        List<Link> links = linkRepository.findByUserIdOrderByCreatedAtAsc(userId);
 
         if (links.isEmpty()) {
             info(log, "No links found for user ID: {}, nothing to delete", userId);
