@@ -22,6 +22,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import static com.linkvault.integration.util.IntegrationTestFactory.createJsonForLink;
+import static com.linkvault.integration.util.IntegrationTestFactory.createJsonForUser;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -54,12 +56,7 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnLinksForUser_WhenAuthenticated() throws Exception {
         // Arrange
-        String json = """
-            {
-                "username": "validUsername",
-                "password": "validPassword1@"
-            }
-            """;
+        String json = createJsonForUser("validUsername", "validPassword1@");
 
         // Act & Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -78,21 +75,17 @@ public class LinkControllerIntegrationTest {
         JsonNode jsonNode = mapper.readTree(responseBody);
         String token = jsonNode.get("token").asText();
 
-        String createJsonOne = """
-                {
-                    "url": "https://docs.oracle.com",
-                    "title": "Java docs",
-                    "description": "Java documentation"
-                }
-            """;
+        String createJsonOne = createJsonForLink(
+            "https://docs.oracle.com",
+            "Java docs",
+            "Java documentation"
+        );
 
-        String createJsonTwo = """
-                {
-                    "url": "https://github.com",
-                    "title": "Git Hub",
-                    "description": "Repositories"
-                }
-            """;
+        String createJsonTwo = createJsonForLink(
+            "https://github.com",
+            "Git Hub",
+            "Repositories"
+        );
 
         MvcResult linkResponseOne = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token)
@@ -136,12 +129,7 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnOkWithEmptyList_WhenUserHasNoOwnedLinks() throws Exception {
         // Arrange
-        String jsonForUserA = """
-            {
-                "username": "validUsername1",
-                "password": "validPassword1@"
-            }
-            """;
+        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
 
         // Act & Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -182,12 +170,7 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnLinkForUser_WhenAuthenticated() throws Exception {
         // Arrange
-        String json = """
-            {
-                "username": "validUsername",
-                "password": "validPassword1@"
-            }
-            """;
+        String json = createJsonForUser("validUsername", "validPassword1@");
 
         // Act & Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -206,13 +189,11 @@ public class LinkControllerIntegrationTest {
         JsonNode jsonNode = mapper.readTree(responseBody);
         String token = jsonNode.get("token").asText();
 
-        String createJson = """
-            {
-                "url": "https://docs.oracle.com",
-                "title": "Java docs",
-                "description": "Java documentation"
-            }
-            """;
+        String createJson = createJsonForLink(
+            "https://docs.oracle.com",
+            "Java docs",
+            "Java documentation"
+        );
 
         MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token)
@@ -243,19 +224,8 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnForbidden_WhenUserTriesToFetchAnotherUsersLink() throws Exception {
         // Arrange
-        String jsonForUserA = """
-            {
-                "username": "validUsername1",
-                "password": "validPassword1@"
-            }
-            """;
-
-        String jsonForUserB = """
-            {
-                "username": "validUsername2",
-                "password": "validPassword2@"
-            }
-            """;
+        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
+        String jsonForUserB = createJsonForUser("validUsername2", "validPassword2@");
 
         // Act & Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -279,13 +249,11 @@ public class LinkControllerIntegrationTest {
         JsonNode jsonNodeForUserB = mapper.readTree(responseBodyForUserB);
         String userBToken = jsonNodeForUserB.get("token").asText();
 
-        String createJson = """
-            {
-                "url": "https://docs.oracle.com",
-                "title": "Java docs",
-                "description": "Java documentation"
-            }
-            """;
+        String createJson = createJsonForLink(
+            "https://docs.oracle.com",
+            "Java docs",
+            "Java documentation"
+        );
 
         MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userBToken)
@@ -323,12 +291,7 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnNotFound_WhenUserFetchesALinkThatDoesntExist() throws Exception {
         // Arrange
-        String jsonForUserA = """
-            {
-                "username": "validUsername1",
-                "password": "validPassword1@"
-            }
-            """;
+        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
 
         // Act & Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -377,19 +340,8 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnForbidden_WhenUserTriesToDeleteAnotherUsersLink() throws Exception {
         // Arrange
-        String jsonForUserA = """
-            {
-                "username": "validUsername1",
-                "password": "validPassword1@"
-            }
-            """;
-
-        String jsonForUserB = """
-            {
-                "username": "validUsername2",
-                "password": "validPassword2@"
-            }
-            """;
+        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
+        String jsonForUserB = createJsonForUser("validUsername2", "validPassword2@");
 
         // Act & Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -413,13 +365,11 @@ public class LinkControllerIntegrationTest {
         JsonNode jsonNodeForUserB = mapper.readTree(responseBodyForUserB);
         String userBToken = jsonNodeForUserB.get("token").asText();
 
-        String createJson = """
-            {
-                "url": "https://docs.oracle.com",
-                "title": "Java docs",
-                "description": "Java documentation"
-            }
-            """;
+        String createJson = createJsonForLink(
+            "https://docs.oracle.com",
+            "Java docs",
+            "Java documentation"
+        );
 
         MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userBToken)
@@ -476,12 +426,7 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnNoContent_WhenUserTriesToDeleteEmptyLinkList() throws Exception {
         // Arrange
-        String jsonForUserA = """
-            {
-                "username": "validUsername1",
-                "password": "validPassword1@"
-            }
-            """;
+        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
 
         // Act & Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -530,19 +475,8 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnForbidden_WhenUserTriesToUpdateAnotherUsersLink() throws Exception {
         // Arrange
-        String jsonForUserA = """
-            {
-                "username": "validUsername1",
-                "password": "validPassword1@"
-            }
-            """;
-
-        String jsonForUserB = """
-            {
-                "username": "validUsername2",
-                "password": "validPassword2@"
-            }
-            """;
+        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
+        String jsonForUserB = createJsonForUser("validUsername2", "validPassword2@");
 
         // Act & Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -566,13 +500,11 @@ public class LinkControllerIntegrationTest {
         JsonNode jsonNodeForUserB = mapper.readTree(responseBodyForUserB);
         String userBToken = jsonNodeForUserB.get("token").asText();
 
-        String createJson = """
-            {
-                "url": "https://docs.oracle.com",
-                "title": "Java docs",
-                "description": "Java documentation"
-            }
-            """;
+        String createJson = createJsonForLink(
+            "https://docs.oracle.com",
+            "Java docs",
+            "Java documentation"
+        );
 
         MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userBToken)
@@ -588,13 +520,11 @@ public class LinkControllerIntegrationTest {
         JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
         long linkId = linkResponseJsonNode.get("id").asLong();
 
-        String updateLinkJson = """
-            {
-                "url": "https://updated.com",
-                "title": "Updated Title",
-                "description": "Updated Description"
-            }
-            """;
+        String updateLinkJson = createJsonForLink(
+            "https://updated.com",
+            "Updated Title",
+            "Updated Description"
+        );
 
         MvcResult resultForUserA = mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.LOGIN)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -639,19 +569,8 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldIgnoreUserIdInRequest_AndCreateLinkForAuthenticatedUser() throws Exception {
         // Arrange
-        String jsonForUserA = """
-            {
-                "username": "validUsername1",
-                "password": "validPassword1@"
-            }
-            """;
-
-        String jsonForUserB = """
-            {
-                "username": "validUsername2",
-                "password": "validPassword2@"
-            }
-            """;
+        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
+        String jsonForUserB = createJsonForUser("validUsername2", "validPassword2@");
 
         // Act & Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -720,12 +639,7 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnCreatedStatusCode_AndCreateLinkForAuthenticatedUser() throws Exception {
         // Arrange
-        String jsonForUserA = """
-            {
-                "username": "validUsername1",
-                "password": "validPassword1@"
-            }
-            """;
+        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
 
         // Act & Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -744,13 +658,11 @@ public class LinkControllerIntegrationTest {
         JsonNode jsonNode = mapper.readTree(responseBody);
         String userAToken = jsonNode.get("token").asText();
 
-        String createJson = """
-            {
-                "url": "https://docs.oracle.com",
-                "title": "Java docs",
-                "description": "Java documentation"
-            }
-            """;
+        String createJson = createJsonForLink(
+            "https://docs.oracle.com",
+            "Java docs",
+            "Java documentation"
+        );
 
         mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken)
@@ -765,12 +677,7 @@ public class LinkControllerIntegrationTest {
     @Test
     void shouldReturnSuccessStatusCode_AndUpdateLinkForAuthenticatedUser() throws Exception {
         // Arrange
-        String jsonForUserA = """
-            {
-                "username": "validUsername1",
-                "password": "validPassword1@"
-            }
-            """;
+        String jsonForUserA = createJsonForUser("validUsername1", "validPassword1@");
 
         // Act & Assert
         mockMvc.perform(post(AuthEndpoints.BASE_AUTH + AuthEndpoints.REGISTER)
@@ -789,13 +696,11 @@ public class LinkControllerIntegrationTest {
         JsonNode jsonNode = mapper.readTree(responseBody);
         String userAToken = jsonNode.get("token").asText();
 
-        String createJson = """
-            {
-                "url": "https://docs.oracle.com",
-                "title": "Java docs",
-                "description": "Java documentation"
-            }
-            """;
+        String createJson = createJsonForLink(
+            "https://docs.oracle.com",
+            "Java docs",
+            "Java documentation"
+        );
 
         MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken)
@@ -811,13 +716,11 @@ public class LinkControllerIntegrationTest {
         JsonNode linkJsonNode = mapper.readTree(linkResponseBody);
         long linkId = linkJsonNode.get("id").asLong();
 
-        String updateLinkJson = """
-            {
-                "url": "https://updated.com",
-                "title": "Updated Title",
-                "description": "Updated Description"
-            }
-            """;
+        String updateLinkJson = createJsonForLink(
+            "https://updated.com",
+            "Updated Title",
+            "Updated Description"
+        );
 
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkId);
