@@ -2,7 +2,6 @@ package com.linkvault.integration.link;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.linkvault.constants.apiPaths.AuthEndpoints;
 import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.integration.util.IntegrationTestFactory;
 import com.linkvault.integration.util.JwtTestTokenFactory;
@@ -22,6 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -77,25 +77,26 @@ public class LinkControllerIntegrationTest {
             "Repositories"
         );
 
-        MvcResult linkResponseOne = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(createJsonOne))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
-            .andExpect(jsonPath("$.title").value("Java docs"))
-            .andReturn();
+        ResultActions resultOne = IntegrationTestFactory.performJsonCreateLinkRequest(
+            mockMvc, token,
+            createJsonOne
+        );
+        MvcResult linkResponseOne = IntegrationTestFactory.assertLinkCreateValidationSuccess(
+            resultOne,
+            "https://docs.oracle.com",
+            "Java docs"
+        );
 
-        MvcResult linkResponseTwo = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(createJsonTwo))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.url").value("https://github.com"))
-            .andExpect(jsonPath("$.title").value("Git Hub"))
-            .andReturn();
+        ResultActions resultTwo = IntegrationTestFactory.performJsonCreateLinkRequest(
+            mockMvc, token,
+            createJsonTwo
+        );
+
+        MvcResult linkResponseTwo = IntegrationTestFactory.assertLinkCreateValidationSuccess(
+            resultTwo,
+            "https://github.com",
+            "Git Hub"
+        );
 
         String linkResponseBodyOne = linkResponseOne.getResponse().getContentAsString();
         JsonNode linkResponseJsonNodeOne = mapper.readTree(linkResponseBodyOne);
@@ -168,15 +169,16 @@ public class LinkControllerIntegrationTest {
             "Java documentation"
         );
 
-        MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(createJson))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
-            .andExpect(jsonPath("$.title").value("Java docs"))
-            .andReturn();
+        ResultActions linkCreateResult = IntegrationTestFactory.performJsonCreateLinkRequest(
+            mockMvc, token,
+            createJson
+        );
+
+        MvcResult linkResponse = IntegrationTestFactory.assertLinkCreateValidationSuccess(
+            linkCreateResult,
+            "https://docs.oracle.com",
+            "Java docs"
+        );
 
         String linkResponseBody = linkResponse.getResponse().getContentAsString();
         JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
@@ -219,15 +221,16 @@ public class LinkControllerIntegrationTest {
             "Java documentation"
         );
 
-        MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userBToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(createJson))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
-            .andExpect(jsonPath("$.title").value("Java docs"))
-            .andReturn();
+        ResultActions linkCreateResult = IntegrationTestFactory.performJsonCreateLinkRequest(
+            mockMvc, userBToken,
+            createJson
+        );
+
+        MvcResult linkResponse = IntegrationTestFactory.assertLinkCreateValidationSuccess(
+            linkCreateResult,
+            "https://docs.oracle.com",
+            "Java docs"
+        );
 
         String linkResponseBody = linkResponse.getResponse().getContentAsString();
         JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
@@ -310,15 +313,16 @@ public class LinkControllerIntegrationTest {
             "Java documentation"
         );
 
-        MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userBToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(createJson))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
-            .andExpect(jsonPath("$.title").value("Java docs"))
-            .andReturn();
+        ResultActions linkCreateResult = IntegrationTestFactory.performJsonCreateLinkRequest(
+            mockMvc, userBToken,
+            createJson
+        );
+
+        MvcResult linkResponse = IntegrationTestFactory.assertLinkCreateValidationSuccess(
+            linkCreateResult,
+            "https://docs.oracle.com",
+            "Java docs"
+        );
 
         String linkResponseBody = linkResponse.getResponse().getContentAsString();
         JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
@@ -420,15 +424,16 @@ public class LinkControllerIntegrationTest {
             "Java documentation"
         );
 
-        MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userBToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(createJson))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
-            .andExpect(jsonPath("$.title").value("Java docs"))
-            .andReturn();
+        ResultActions linkCreateResult = IntegrationTestFactory.performJsonCreateLinkRequest(
+            mockMvc, userBToken,
+            createJson
+        );
+
+        MvcResult linkResponse = IntegrationTestFactory.assertLinkCreateValidationSuccess(
+            linkCreateResult,
+            "https://docs.oracle.com",
+            "Java docs"
+        );
 
         String linkResponseBody = linkResponse.getResponse().getContentAsString();
         JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
@@ -502,15 +507,16 @@ public class LinkControllerIntegrationTest {
             }
             """, userB.getId());
 
+        ResultActions linkCreateResult = IntegrationTestFactory.performJsonCreateLinkRequest(
+            mockMvc, userAToken,
+            maliciousJson
+        );
 
-        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(maliciousJson))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.url").value("https://githack.com"))
-            .andExpect(jsonPath("$.title").value("Git Hack"));
+        IntegrationTestFactory.assertLinkCreateValidationSuccess(
+            linkCreateResult,
+            "https://githack.com",
+            "Git Hack"
+        );
     }
 
     @Test
@@ -552,14 +558,16 @@ public class LinkControllerIntegrationTest {
             "Java documentation"
         );
 
-        mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(createJson))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
-            .andExpect(jsonPath("$.title").value("Java docs"));
+        ResultActions linkCreateResult = IntegrationTestFactory.performJsonCreateLinkRequest(
+            mockMvc, userAToken,
+            createJson
+        );
+
+        IntegrationTestFactory.assertLinkCreateValidationSuccess(
+            linkCreateResult,
+            "https://docs.oracle.com",
+            "Java docs"
+        );
     }
 
     @Test
@@ -582,15 +590,15 @@ public class LinkControllerIntegrationTest {
             "Java documentation"
         );
 
-        MvcResult linkResponse = mockMvc.perform(post(LinkEndpoints.BASE_LINKS)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(createJson))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.url").value("https://docs.oracle.com"))
-            .andExpect(jsonPath("$.title").value("Java docs"))
-            .andReturn();
+        ResultActions linkCreateResult = IntegrationTestFactory.performJsonCreateLinkRequest(
+            mockMvc, userAToken,
+            createJson
+        );
+        MvcResult linkResponse = IntegrationTestFactory.assertLinkCreateValidationSuccess(
+            linkCreateResult,
+            "https://docs.oracle.com",
+            "Java docs"
+        );
 
         String linkResponseBody = linkResponse.getResponse().getContentAsString();
         JsonNode linkJsonNode = mapper.readTree(linkResponseBody);
@@ -605,13 +613,16 @@ public class LinkControllerIntegrationTest {
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, linkId);
 
-        mockMvc.perform(put(link1IdPath)
+        ResultActions linkUpdateResult = mockMvc.perform(put(link1IdPath)
                 .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + userAToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(updateLinkJson))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(linkId))
-            .andExpect(jsonPath("$.url").value("https://updated.com"))
-            .andExpect(jsonPath("$.title").value("Updated Title"));
+            .andExpect(status().isOk());
+
+        IntegrationTestFactory.assertLinkCreateValidationSuccess(
+            linkUpdateResult,
+            "https://updated.com",
+            "Updated Title"
+        );
     }
 }
