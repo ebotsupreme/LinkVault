@@ -187,8 +187,11 @@ public class LinkControllerIntegrationTest {
             "Java docs"
         );
 
-        String linkResponseBody = linkResponse.getResponse().getContentAsString();
-        JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
+        JsonNode linkResponseJsonNode = IntegrationTestFactory.getLinkResponseJsonNodeFromBody(
+            linkResponse,
+            mapper
+        );
+
         long linkId = linkResponseJsonNode.get("id").asLong();
         String linkUrl = linkResponseJsonNode.get("url").asText();
         String linkTitle = linkResponseJsonNode.get("title").asText();
@@ -239,8 +242,11 @@ public class LinkControllerIntegrationTest {
             "Java docs"
         );
 
-        String linkResponseBody = linkResponse.getResponse().getContentAsString();
-        JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
+        JsonNode linkResponseJsonNode = IntegrationTestFactory.getLinkResponseJsonNodeFromBody(
+            linkResponse,
+            mapper
+        );
+
         long linkId = linkResponseJsonNode.get("id").asLong();
 
         MvcResult resultForUserA = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserA);
@@ -337,8 +343,11 @@ public class LinkControllerIntegrationTest {
             "Java docs"
         );
 
-        String linkResponseBody = linkResponse.getResponse().getContentAsString();
-        JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
+        JsonNode linkResponseJsonNode = IntegrationTestFactory.getLinkResponseJsonNodeFromBody(
+            linkResponse,
+            mapper
+        );
+
         long linkId = linkResponseJsonNode.get("id").asLong();
 
         MvcResult resultForUserA = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, jsonForUserA);
@@ -463,8 +472,11 @@ public class LinkControllerIntegrationTest {
             "Java docs"
         );
 
-        String linkResponseBody = linkResponse.getResponse().getContentAsString();
-        JsonNode linkResponseJsonNode = mapper.readTree(linkResponseBody);
+        JsonNode linkResponseJsonNode = IntegrationTestFactory.getLinkResponseJsonNodeFromBody(
+            linkResponse,
+            mapper
+        );
+
         long linkId = linkResponseJsonNode.get("id").asLong();
 
         String updateLinkJson = IntegrationTestFactory.createJsonForLink(
@@ -640,9 +652,12 @@ public class LinkControllerIntegrationTest {
             "Java docs"
         );
 
-        String linkResponseBody = linkResponse.getResponse().getContentAsString();
-        JsonNode linkJsonNode = mapper.readTree(linkResponseBody);
-        long linkId = linkJsonNode.get("id").asLong();
+        JsonNode linkResponseJsonNode = IntegrationTestFactory.getLinkResponseJsonNodeFromBody(
+            linkResponse,
+            mapper
+        );
+
+        long linkId = linkResponseJsonNode.get("id").asLong();
 
         String updateLinkJson = IntegrationTestFactory.createJsonForLink(
             "https://updated.com",

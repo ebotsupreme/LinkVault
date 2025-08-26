@@ -105,4 +105,12 @@ public class IntegrationTestFactory {
         mockMvc.perform(request(method, linkEndpoint))
             .andExpect(status().isUnauthorized());
     }
+
+    public static JsonNode getLinkResponseJsonNodeFromBody(
+        MvcResult linkResponse,
+        ObjectMapper mapper
+    ) throws Exception {
+        String linkResponseBody = linkResponse.getResponse().getContentAsString();
+        return mapper.readTree(linkResponseBody);
+    }
 }
