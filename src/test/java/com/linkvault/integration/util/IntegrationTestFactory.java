@@ -5,12 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkvault.constants.apiPaths.AuthEndpoints;
 import com.linkvault.constants.apiPaths.LinkEndpoints;
 import com.linkvault.unit.util.TestConstants;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -90,4 +91,18 @@ public class IntegrationTestFactory {
             .andReturn();
     }
 
+    public static void performUnauthorizedJsonRequest(
+        MockMvc mockMvc, HttpMethod method, String linkEndpoint, String token
+    ) throws Exception {
+        mockMvc.perform(request(method, linkEndpoint)
+                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + token))
+            .andExpect(status().isUnauthorized());
+    }
+
+    public static void performUnauthorizedJsonRequestWithoutHeader(
+        MockMvc mockMvc, HttpMethod method, String linkEndpoint
+    ) throws Exception {
+        mockMvc.perform(request(method, linkEndpoint))
+            .andExpect(status().isUnauthorized());
+    }
 }

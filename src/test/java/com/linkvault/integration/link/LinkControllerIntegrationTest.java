@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -65,10 +66,10 @@ public class LinkControllerIntegrationTest {
         MvcResult result = IntegrationTestFactory.performJsonUserLoginRequest(mockMvc, json);
         String token = IntegrationTestFactory.getUserTokenFromJsonResponse(result, mapper);
 
-            String createJsonOne = IntegrationTestFactory.createJsonForLink(
-            "https://docs.oracle.com",
-            "Java docs",
-            "Java documentation"
+        String createJsonOne = IntegrationTestFactory.createJsonForLink(
+        "https://docs.oracle.com",
+        "Java docs",
+        "Java documentation"
         );
 
         String createJsonTwo = IntegrationTestFactory.createJsonForLink(
@@ -138,15 +139,21 @@ public class LinkControllerIntegrationTest {
 
     @Test
     void shouldReturnUnauthorizedForUser_WhenFetchingLinksWithoutAToken() throws Exception {
-        mockMvc.perform(get(LinkEndpoints.BASE_LINKS))
-            .andExpect(status().isUnauthorized());
+        IntegrationTestFactory.performUnauthorizedJsonRequestWithoutHeader(
+            mockMvc,
+            HttpMethod.GET,
+            LinkEndpoints.BASE_LINKS
+        );
     }
 
     @Test
     void shouldReturnUnauthorizedForUser_WhenFetchingLinksWithMalformedToken() throws Exception {
-        mockMvc.perform(get(LinkEndpoints.BASE_LINKS)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + "malformed.token"))
-            .andExpect(status().isUnauthorized());
+        IntegrationTestFactory.performUnauthorizedJsonRequest(
+            mockMvc,
+            HttpMethod.GET,
+            LinkEndpoints.BASE_LINKS,
+            "malformed.token"
+        );
     }
 
     @Test
@@ -274,8 +281,11 @@ public class LinkControllerIntegrationTest {
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, 1L);
 
-        mockMvc.perform(get(link1IdPath))
-            .andExpect(status().isUnauthorized());
+        IntegrationTestFactory.performUnauthorizedJsonRequestWithoutHeader(
+            mockMvc,
+            HttpMethod.GET,
+            link1IdPath
+        );
     }
 
     @Test
@@ -283,9 +293,12 @@ public class LinkControllerIntegrationTest {
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, 1L);
 
-        mockMvc.perform(get(link1IdPath)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + "malformed.token"))
-            .andExpect(status().isUnauthorized());
+        IntegrationTestFactory.performUnauthorizedJsonRequest(
+            mockMvc,
+            HttpMethod.GET,
+            link1IdPath,
+            "malformed.token"
+        );
     }
 
     @Test
@@ -344,8 +357,11 @@ public class LinkControllerIntegrationTest {
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, 1L);
 
-        mockMvc.perform(delete(link1IdPath))
-            .andExpect(status().isUnauthorized());
+        IntegrationTestFactory.performUnauthorizedJsonRequestWithoutHeader(
+            mockMvc,
+            HttpMethod.DELETE,
+            link1IdPath
+        );
     }
 
     @Test
@@ -353,9 +369,12 @@ public class LinkControllerIntegrationTest {
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, 1L);
 
-        mockMvc.perform(delete(link1IdPath)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + "malformed.token"))
-            .andExpect(status().isUnauthorized());
+        IntegrationTestFactory.performUnauthorizedJsonRequest(
+            mockMvc,
+            HttpMethod.DELETE,
+            link1IdPath,
+            "malformed.token"
+        );
     }
 
     @Test
@@ -379,24 +398,33 @@ public class LinkControllerIntegrationTest {
 
     @Test
     void shouldReturnUnauthorizedForUser_WhenDeletingLinksWithoutAToken() throws Exception {
-        mockMvc.perform(delete(LinkEndpoints.BASE_LINKS))
-            .andExpect(status().isUnauthorized());
+        IntegrationTestFactory.performUnauthorizedJsonRequestWithoutHeader(
+            mockMvc,
+            HttpMethod.DELETE,
+            LinkEndpoints.BASE_LINKS
+        );
     }
 
     @Test
     void shouldReturnUnauthorizedForUser_WhenDeletingLinksWithMalformedToken() throws Exception {
-        mockMvc.perform(delete(LinkEndpoints.BASE_LINKS)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + "malformed.token"))
-            .andExpect(status().isUnauthorized());
+        IntegrationTestFactory.performUnauthorizedJsonRequest(
+            mockMvc,
+            HttpMethod.DELETE,
+            LinkEndpoints.BASE_LINKS,
+            "malformed.token"
+        );
     }
 
     @Test
     void shouldReturnUnauthorized_WhenTokenIsExpired() throws Exception {
         String expiredToken = JwtTestTokenFactory.buildExpiredToken(jwtSecret);
 
-        mockMvc.perform(delete(LinkEndpoints.BASE_LINKS)
-            .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + expiredToken))
-        .andExpect(status().isUnauthorized());
+        IntegrationTestFactory.performUnauthorizedJsonRequest(
+            mockMvc,
+            HttpMethod.DELETE,
+            LinkEndpoints.BASE_LINKS,
+            expiredToken
+        );
     }
 
     @Test
@@ -463,8 +491,11 @@ public class LinkControllerIntegrationTest {
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, 1L);
 
-        mockMvc.perform(put(link1IdPath))
-            .andExpect(status().isUnauthorized());
+        IntegrationTestFactory.performUnauthorizedJsonRequestWithoutHeader(
+            mockMvc,
+            HttpMethod.PUT,
+            link1IdPath
+        );
     }
 
     @Test
@@ -472,9 +503,12 @@ public class LinkControllerIntegrationTest {
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, 1L);
 
-        mockMvc.perform(put(link1IdPath)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + "malformed.token"))
-            .andExpect(status().isUnauthorized());
+        IntegrationTestFactory.performUnauthorizedJsonRequest(
+            mockMvc,
+            HttpMethod.PUT,
+            link1IdPath,
+            "malformed.token"
+        );
     }
 
     @Test
@@ -524,8 +558,11 @@ public class LinkControllerIntegrationTest {
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, 1L);
 
-        mockMvc.perform(post(link1IdPath))
-            .andExpect(status().isUnauthorized());
+        IntegrationTestFactory.performUnauthorizedJsonRequestWithoutHeader(
+            mockMvc,
+            HttpMethod.POST,
+            link1IdPath
+        );
     }
 
     @Test
@@ -533,9 +570,12 @@ public class LinkControllerIntegrationTest {
         String link1IdPath = TestDataFactory
             .buildLinkEndpointWithId(TestConstants.LINK_ID_PATH_VAR, 1L);
 
-        mockMvc.perform(post(link1IdPath)
-                .header(TestConstants.AUTHORIZATION, TestConstants.BEARER + "malformed.token"))
-            .andExpect(status().isUnauthorized());
+        IntegrationTestFactory.performUnauthorizedJsonRequest(
+            mockMvc,
+            HttpMethod.POST,
+            link1IdPath,
+            "malformed.token"
+        );
     }
 
     @Test
